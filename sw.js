@@ -10,7 +10,7 @@
  *    ride mode opens to import it.
  *  - The cache name carries a hash of the app files, filled in at build time; an old cache is dropped on activate.
  *  - The dashboard's data lives in the page's own storage on this device, not in this cache. */
-const CACHE = "fitness-cbe251999b";
+const CACHE = "fitness-e3c419feec";
 const TILES = "fitness-tiles", INBOX = "fitness-inbox";
 const SHELL = ["./", "./index.html", "./ride.html", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png",
   "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
