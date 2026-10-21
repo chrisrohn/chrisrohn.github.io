@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-Xo4qAjh4xF6HsAWHojWHUsfygCVr7JMDC0i01imHjFc=' 'sha256-fn0wpeI1vQUl0tqHuQEK+MBZXrqgk1BHIQBT5sIbQzo=' 'sha256-xZP+CkPbNDYbhCC8f95CaH7b1+INL5g91n97ZgF0Yo4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-H2lVGdondPQBE7PF/i1YoJNIyskDe3ME6XBWu7fU2II=' 'sha256-4iOUMuRfxhmEBx0mybLqrnsMl8ghOncuIzEkZzjX8Z4=' 'sha256-b/givX+cI1MKr2gKIrI1VkvqgZarAzTJtfKJgYQ1GDY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#111111">
+  <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Ride Mode</title>
   <meta name="application-name" content="Training">
@@ -16,7 +16,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>try { const t = localStorage.getItem("fitness-theme"); document.documentElement.dataset.theme = t || "light"; } catch (e) { document.documentElement.dataset.theme = "light"; }</script>
+  <script>try { const t = localStorage.getItem("fitness-theme"); document.documentElement.dataset.theme = t || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }</script>
   <style>/* Training & Recovery — set in the International Typographic Style, c. 1978: Helvetica flush left and ragged right
    on a strict grid; black bands and heavy rules instead of boxes and shadows; square corners; uncoated-paper white;
    Swiss red as the one accent; ordered scales as halftone tints of black, like a two-colour print job. The chart
@@ -263,7 +263,7 @@ details.table .scroll { max-height: 264px; overflow: auto; margin-top: var(--sp-
 .phase { display: inline-flex; align-items: center; min-height: 18px; padding: 0 5px; border: 1px solid var(--ink); color: var(--ink); white-space: nowrap; }
 .phase.taper { border-color: var(--s2); color: var(--s2); }
 .phase.openers { border-color: var(--accent-ink); color: var(--accent-ink); }
-.phase.race { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+.phase.race { background: #b8281a; border-color: #b8281a; color: #ffffff; }   /* the darker red: white type at AA in both themes */
 .phase.indoor { background: var(--ink); color: var(--page); }
 .phase.recovery, .phase.transition { border-color: var(--hair); color: var(--ink-2); }
 .phase.commute { border-color: var(--s2); color: var(--s2); }
@@ -453,264 +453,267 @@ footer p { max-width: 64ch; }
 .race-day details.case summary { text-transform: none; letter-spacing: normal; font-size: var(--fs-body, 1rem); font-weight: 400; }
 .race-day details.case summary .sub { display: block; }
 </style>
-  <style>/* Ride mode, set like a 1978 transit sign: a black band on top, Helvetica numerals as big as the screen allows,
-   heavy rules for structure, square everything, red only where it matters. Paper-white by default: black on white
-   is what stays readable in full sun.
-
-   Same type, space and rule scales as the dashboard (style.css), plus three sign-sized figures for the bars:
-   heart rate 72–176, step clock 40–84, tiles 24–44, fitted to the screen's height as well as its width. Every control is at least 44px (gloves, bumps). */
+  <style>/* Ride mode, set like a 1970s transit sign and laid out like a bike computer: a black band on top, Helvetica numerals
+   as big as the screen allows, heavy rules for structure, square everything, red only where it matters.
+   - Dark by default (true black: the Pixel's OLED draws nothing there, and white on black is the sign's own scheme);
+     paper-white is a setting. The five zones are flat signal colors, like a subway map's lines: the heart rate, its
+     round zone bullet, the target band and the zone bar all wear them.
+   - Fitted to the screen's height and width together: a Pixel 7 (412 × ~870 px installed) shows every Workout field
+     without scrolling, and so does anything from a 360 × 640 phone up. Every control is 44 px or more (gloves, bumps).
+   Shares the dashboard's type and space scales (style.css). */
 body.ride {
-  --tap: 44px; --gutter: var(--sp-4);
-  /* sized by width and height together, so the whole screen fits without scrolling on anything from an SE up */
-  --fs-ride-hr: clamp(4.5rem, min(40vw, 19dvh), 11rem); --fs-ride-clock: clamp(2.5rem, min(16vw, 9dvh), 5.25rem);
-  --fs-ride-figure: clamp(1.5rem, min(8vw, 5dvh), 2.75rem);
-  height: 100dvh; display: flex; flex-direction: column; background: var(--page); overflow: hidden;
+  --tap: 44px; --gutter: var(--sp-4); --radius: 0;
+  --num: var(--font);
+  --fs-ride-hr: clamp(4.25rem, min(40vw, 17dvh), 11rem); --fs-ride-clock: clamp(2.5rem, min(19vw, 10dvh), 6rem);
+  --fs-ride-figure: clamp(1.5rem, min(9vw, 5dvh), 2.9rem);
+  height: 100dvh; display: flex; flex-direction: column; background: var(--page); color: var(--ink); overflow: hidden;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-tap-highlight-color: transparent;
+  /* light: the paper of the dashboard, zone colors one step darker so they hold on white */
+  --zc1: #6b7079; --zc2: #1f63d6; --zc3: #138a46; --zc4: #c77700; --zc5: #d6301f;
+  --field: #fbf9f4; --line: #d9d5cb;
 }
+html[data-theme="dark"] body.ride {
+  --page: #000000; --surface: #000000; --raised: #121212; --band: #000000; --on-band: #f5f3ee; --sheet-shadow: #000000;
+  --ink: #f5f3ee; --ink-2: #aaa69e; --muted: #77746e; --hair: #2a2a2a; --grid: #1b1b1b;
+  --accent: #ff4b33; --accent-ink: #ff6a55; --good: #34c759; --good-ink: #34c759; --warn: #ffb020; --crit: #ff453a;
+  --zc1: #8e939c; --zc2: #3d8bff; --zc3: #2fc46b; --zc4: #ffa21a; --zc5: #ff4b33;
+  --z1: var(--zc1); --z2: var(--zc2); --z3: var(--zc3); --z4: var(--zc4); --z5: var(--zc5);
+  --field: #0c0c0c; --line: #222222;
+}
+body.ride { --z1: var(--zc1); --z2: var(--zc2); --z3: var(--zc3); --z4: var(--zc4); --z5: var(--zc5); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 body.ride [hidden] { display: none !important; }
+body.ride .num, .steptime, .hrval, .rtile .v, .mapfields b, .navbanner .nbtext b, .lapnow b, .climbrow b, .sum b { font-family: var(--num); font-variant-numeric: tabular-nums; letter-spacing: var(--track-figure); }
 
-/* the band: session picker and sensor state */
-.rtop { flex: none; display: block; }
-.rbar { flex: none; display: flex; gap: var(--sp-2); align-items: center; padding: var(--sp-2) var(--gutter); background: var(--band); color: var(--on-band); }
+/* ── the status strip: session (before the ride), clock, sensors, battery, settings ─────────────────────────────── */
+.rtop { flex: none; display: block; background: var(--band); }
+.rbar { display: flex; gap: var(--sp-2); align-items: center; padding: var(--sp-1) var(--sp-3); background: var(--band); color: var(--on-band); }
 .rbar .day { flex: 1 1 auto; min-width: 0; }
 .rbar select {
   width: 100%; min-height: var(--tap); font-family: inherit; font-size: var(--fs-small); font-weight: 700; color: var(--on-band);
   background: var(--band); border: 1.5px solid var(--on-band); border-radius: 0; padding: 0 var(--sp-2); text-overflow: ellipsis;
 }
-.rbar .chip, .rbar span.chip { color: var(--on-band); border-color: var(--on-band); background: transparent; }
+.sbclock, .sbbatt { font-size: var(--fs-body); font-weight: 700; color: var(--on-band); white-space: nowrap; }
+.sbclock { display: none; }
+.sbbatt { color: #aaa69e; font-size: var(--fs-small); }
+.sbbatt:empty { display: none; }
+body.riding .sbclock { display: inline; margin-right: auto; }
+.rbar .chip, .rbar span.chip { color: var(--on-band); border: 1.5px solid var(--on-band); background: transparent; }
 .rbar button.chip:hover { background: var(--on-band); color: var(--band); }
 .rbar .chip { min-height: var(--tap); padding: 0 var(--sp-2); }
 span.chip {
   display: inline-flex; align-items: center; justify-content: center; font-size: var(--fs-label); font-weight: 700; line-height: var(--lh-snug);
   text-transform: uppercase; letter-spacing: var(--track-label); border: 1.5px solid var(--ink); white-space: nowrap;
 }
-.chip.sensor { gap: var(--sp-1); }
+.chip.sensor { gap: 6px; }
 .chip.sensor i { width: var(--sp-2); height: var(--sp-2); border: 1.5px solid currentColor; }
 .chip.sensor.on i { background: var(--good); border-color: var(--good); }
 .chip.sensor.wait i { background: var(--warn); border-color: var(--warn); }
 .chip.sensor.off i { background: var(--crit); border-color: var(--crit); }
 .chip.primary { background: var(--ink); color: var(--page); }
 
-.rmain { max-width: none; margin: 0; padding: var(--sp-4) var(--gutter) var(--sp-3); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); align-content: start; counter-reset: none; }
+/* ── screens: tabs along the top, swiped or tapped ──────────────────────────────────────────────────────────── */
+.rtabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: var(--band); border-top: 1px solid #2a2a2a; }
+.rtabs button {
+  font: inherit; font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); min-height: 40px;
+  background: transparent; color: #8f8b84; border: 0; border-bottom: 4px solid transparent; cursor: pointer; padding: 0 2px;
+}
+.rtabs button[aria-selected="true"] { color: var(--on-band); border-bottom-color: var(--accent); }
+.rtabs button:focus-visible { outline: 2px solid var(--on-band); outline-offset: -4px; }
+.pages { max-width: none; margin: 0; padding: 0; gap: 0; counter-reset: none; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; }
+.pages > .page { flex: 1 0 auto; }
+.pages:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rmain { max-width: none; margin: 0; padding: var(--sp-3) var(--gutter); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); align-content: start; counter-reset: none; }
 
-/* the step: what to do now, for how long, at what heart rate */
-.stepcard, .hrcard { border-top: var(--rule-major) solid var(--ink); }
-.stepcard { padding-top: var(--sp-3); display: grid; gap: var(--sp-1); }
-.stepname, .zone, .rtile .k, .next, .status, .sform label, .sum, .fuel b, button.big {
+/* ── the step: what to do now, for how long, at what heart rate ────────────────────────────────────────────── */
+.stepcard { display: grid; gap: 6px; border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-2); }
+.stephead { display: flex; align-items: center; gap: var(--sp-2); min-height: 32px; }
+.stepname, .zone, .rtile .k, .next, .status, .sform label, .sum, .fuel b, button.big, .mapfields .k, .prof .k, .list .k, .climb .k, .lapnow .k, h3.k {
   font-size: var(--fs-label); font-weight: 700; line-height: var(--lh-snug); text-transform: uppercase; letter-spacing: var(--track-label);
 }
-.stepname { display: flex; align-items: center; gap: var(--sp-2); }
+.stepname { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-small); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .stepname::before { content: ""; width: 10px; height: 10px; background: var(--accent); flex: none; }
-.steptime { font-size: var(--fs-ride-clock); font-weight: 700; line-height: .95; letter-spacing: var(--track-display); font-variant-numeric: tabular-nums; margin-top: var(--sp-1); }
-.target { font-size: var(--fs-lead); line-height: var(--lh-snug); }
-.target b { font-weight: 700; font-variant-numeric: tabular-nums; }
-.progress { height: var(--sp-2); border-bottom: var(--rule-hair) solid var(--hair); overflow: hidden; margin-top: var(--sp-2); }
-.progress span { display: block; height: 100%; width: 0; background: var(--ink); transition: width .9s linear; }
-.cue { font-size: var(--fs-body); line-height: 1.4; min-height: 1.4em; margin-top: var(--sp-1); text-wrap: pretty; }
+.stephead .chip.more { min-height: 32px; padding: 0 var(--sp-3); font-size: var(--fs-label); color: var(--ink); border: 1.5px solid var(--ink); background: transparent; }
+.steptime { font-size: var(--fs-ride-clock); font-weight: 700; line-height: .92; }
+.target { font-size: var(--fs-lead); line-height: var(--lh-snug); color: var(--ink-2); }
+.target b { font-weight: 700; color: var(--ink); font-family: var(--num); font-variant-numeric: tabular-nums; font-size: 1.15em; }
+.gauge { position: relative; height: var(--sp-3); background: var(--grid); margin-top: 2px; }
+.gauge .band { position: absolute; top: 0; bottom: 0; background: var(--zc2); }
+.gauge .band[data-zone="1"] { background: var(--zc1); } .gauge .band[data-zone="2"] { background: var(--zc2); } .gauge .band[data-zone="3"] { background: var(--zc3); }
+.gauge .band[data-zone="4"] { background: var(--zc4); } .gauge .band[data-zone="5"] { background: var(--zc5); }
+.gauge .mark { position: absolute; top: calc(-1 * var(--sp-2)); width: 4px; height: calc(var(--sp-3) + var(--sp-4)); background: var(--ink); box-shadow: 0 0 0 2px var(--page); transform: translateX(-2px); transition: left .6s ease; }
+.progress { height: var(--sp-1); background: var(--grid); overflow: hidden; }
+.progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .9s linear; }
+.cue { font-size: var(--fs-body); line-height: 1.35; color: var(--ink-2); text-wrap: pretty; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cue:empty { display: none; }
 .next { color: var(--ink-2); }
-.cue.hot { color: var(--accent-ink); font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .gauge .mark, .progress span { transition: none; } }
 
-/* heart rate: the biggest thing on the screen */
-.hrcard { padding-top: var(--sp-2); display: grid; gap: var(--sp-2); }
-.hrval { font-size: var(--fs-ride-hr); font-weight: 700; line-height: .85; letter-spacing: -.06em; font-variant-numeric: tabular-nums; margin-left: -.05em; }
-.hrmeta { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); min-height: var(--sp-6); }
-.status { font-size: var(--fs-small); display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--sp-6); padding: 0 var(--sp-3); border: 1.5px solid transparent; }
+/* what the app just changed on its own, with Undo */
+.suggest { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); padding: var(--sp-3); background: var(--ink); color: var(--page); border-left: var(--sp-3) solid var(--zc2); font-size: var(--fs-body); line-height: 1.35; }
+.suggest span:first-child { flex: 1 1 14rem; }
+.suggest .sbtns { display: flex; gap: var(--sp-2); }
+.suggest .chip { min-height: var(--tap); padding: 0 var(--sp-4); color: var(--page); border: 1.5px solid var(--page); background: transparent; }
+.suggest .chip.primary { background: var(--page); color: var(--ink); border-color: var(--page); }
+
+/* ── heart rate: the biggest thing on the screen, in its zone's color ──────────────────────────────────────── */
+.hrcard { display: grid; gap: 6px; border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-2); }
+.hrval { font-size: var(--fs-ride-hr); font-weight: 700; line-height: .85; letter-spacing: -.06em; margin-left: -.05em; color: var(--ink); transition: color .4s ease; }
+.hrval.idle { font-size: calc(var(--fs-ride-hr) * .45); line-height: 1.2; letter-spacing: 0; color: var(--muted); }
+.hrcard[data-zone="1"] .hrval { color: var(--zc1); } .hrcard[data-zone="2"] .hrval { color: var(--zc2); } .hrcard[data-zone="3"] .hrval { color: var(--zc3); }
+.hrcard[data-zone="4"] .hrval { color: var(--zc4); } .hrcard[data-zone="5"] .hrval { color: var(--zc5); }
+.hrmeta { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); min-height: 36px; }
+.zone { color: var(--ink); font-size: var(--fs-small); display: inline-flex; align-items: center; gap: var(--sp-2); }
+/* the zone as a line bullet: a filled circle in the zone's color with its number, like a subway map's */
+.zone[data-n]::before { content: attr(data-n); display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-size: var(--fs-body); letter-spacing: 0;
+  color: #ffffff; background: var(--zc1); }
+.zone[data-n="2"]::before { background: var(--zc2); } .zone[data-n="3"]::before { background: var(--zc3); } .zone[data-n="4"]::before { background: var(--zc4); color: #000000; } .zone[data-n="5"]::before { background: var(--zc5); }
+.status { font-size: var(--fs-small); display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 36px; padding: 0 var(--sp-3); border: 1.5px solid transparent; }
 .status:empty { padding: 0; border: 0; }
 .status::before { content: ""; width: 10px; height: 10px; background: transparent; }
 .status.good { border-color: var(--ink); } .status.good::before { background: var(--good); }
-.status.up { background: var(--ink); color: var(--page); } .status.up::before { background: var(--warn); }
-.status.down { background: var(--accent); color: #ffffff; } .status.down::before { background: #ffffff; }
+.status.up { background: var(--ink); color: var(--page); } .status.up::before { background: var(--zc2); }
+.status.down { background: #c42b1b; color: #ffffff; } .status.down::before { background: #ffffff; }
 .status.feel { border-color: var(--hair); color: var(--ink-2); } .status.feel::before { background: var(--muted); }
 .zbar { position: relative; display: grid; grid-template-columns: 21fr 9fr 4fr 6fr 12fr;   /* 60–112% of threshold HR */ gap: 2px; height: var(--sp-3); }
-.zbar span:nth-child(1) { background: var(--z1); } .zbar span:nth-child(2) { background: var(--z2); } .zbar span:nth-child(3) { background: var(--z3); }
-.zbar span:nth-child(4) { background: var(--z4); } .zbar span:nth-child(5) { background: var(--z5); }
+.zbar span:nth-child(1) { background: var(--zc1); } .zbar span:nth-child(2) { background: var(--zc2); } .zbar span:nth-child(3) { background: var(--zc3); }
+.zbar span:nth-child(4) { background: var(--zc4); } .zbar span:nth-child(5) { background: var(--zc5); }
 .zbar b { position: absolute; top: calc(-1 * var(--sp-2)); width: 4px; height: calc(var(--sp-3) + var(--sp-4)); background: var(--accent); box-shadow: 0 0 0 2px var(--page); left: 0; display: none; transform: translateX(-2px); }
 
-/* the readings */
+/* ── the fields: a grid with hairline dividers, label top-left, value big ───────────────────────────────────── */
 .rtiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 var(--sp-3); }
-.rtile { border-top: var(--rule-hair) solid var(--ink); padding: var(--sp-2) 0 var(--sp-3); display: grid; gap: var(--sp-1); min-width: 0; }
-.rtile .v { font-size: var(--fs-ride-figure); font-weight: 700; line-height: var(--lh-tight); letter-spacing: var(--track-figure); white-space: nowrap; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: clip; }
+.rtile { border-top: var(--rule-hair) solid var(--ink); padding: var(--sp-2) 0 var(--sp-2); display: grid; gap: 2px; min-width: 0; align-content: start; }
+.rtile .k { color: var(--ink-2); }
+.rtile .v { font-size: var(--fs-ride-figure); font-weight: 700; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: clip; }
 button.rtile { font: inherit; color: inherit; text-align: left; background: transparent; border-left: 0; border-right: 0; border-bottom: 0; border-radius: 0; cursor: pointer; }
 .rtile .s { font-size: var(--fs-small); color: var(--ink-2); line-height: var(--lh-snug); }
+.rtile .v small { font-family: var(--font); font-size: var(--fs-small); font-weight: 400; letter-spacing: 0; color: var(--ink-2); margin-left: 3px; }
+.wxbar .rtile .v { font-size: clamp(1.25rem, min(7vw, 4dvh), 2rem); }
 .wxbar .v .arrow { display: inline-block; font-style: normal; margin-right: 4px; transition: transform .4s ease; }
-.wxbar #wx-rel { font-size: var(--fs-body); font-weight: 700; white-space: normal; line-height: var(--lh-snug); }
+.wxbar #wx-rel { font-family: var(--font); font-size: var(--fs-body); font-weight: 700; white-space: normal; line-height: var(--lh-snug); }
 @media (prefers-reduced-motion: reduce) { .wxbar .v .arrow { transition: none; } }
-.rtile .v small { font-size: var(--fs-small); font-weight: 400; letter-spacing: 0; color: var(--ink-2); margin-left: 2px; }
 
 .fuel { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--sp-7); padding: var(--sp-2) var(--sp-3); background: var(--ink); color: var(--page); border-left: var(--sp-3) solid var(--accent); }
-.fuel[hidden] { display: none; }
 .fuel span { flex: 1 1 auto; font-size: var(--fs-small); opacity: .85; }
-.fuel .chip { color: var(--page); border-color: var(--page); }
+.fuel .chip { color: var(--page); border-color: var(--page); min-height: var(--tap); padding: 0 var(--sp-3); }
 .note { font-size: var(--fs-small); color: var(--ink-2); text-wrap: pretty; }
 .note .chip { margin-top: var(--sp-2); min-height: var(--tap); padding: 0 var(--sp-3); }
 
-/* the controls: full-bleed, thumb-sized */
-.rfoot { flex: none; max-width: none; margin: 0; display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 0; padding: 0; border-top: var(--rule-major) solid var(--ink); background: var(--page); color: var(--ink); font-size: inherit; }
+/* ── the controls: full-bleed, thumb-sized ─────────────────────────────────────────────────────────────────── */
+.rfoot { flex: none; max-width: none; margin: 0; display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 1px; padding: 0; border-top: var(--rule-major) solid var(--ink); background: var(--hair); color: var(--ink); font-size: inherit; }
 .rfoot::before { content: none; }
-button.big { font-family: inherit; font-size: var(--fs-small); min-height: 64px; border: 0; border-right: var(--rule-hair) solid var(--ink); background: var(--page); color: var(--ink); cursor: pointer; }
-button.big:last-child { border-right: 0; }
+button.big { font-family: inherit; font-size: var(--fs-small); min-height: 68px; border: 0; background: var(--page); color: var(--ink); cursor: pointer; }
+button.big:active { background: var(--raised); }
 button.big:disabled { color: var(--muted); cursor: default; }
-button.big.go { background: var(--accent); color: #ffffff; }
-button.big.go.paused { background: var(--ink); color: var(--page); }
+button.big.go { background: #c42b1b; color: #ffffff; font-size: var(--fs-body); }   /* the sign's red, deep enough for white type at AA */
+button.big.go.paused { background: var(--raised); color: var(--ink); }
 button.big.end:not(:disabled) { color: var(--accent-ink); }
 
-/* sheets */
-dialog { border: 1.5px solid var(--ink); border-radius: 0; background: var(--page); color: var(--ink); padding: 0; width: min(calc(100vw - 2 * var(--sp-4)), 420px); box-shadow: var(--sp-2) var(--sp-2) 0 var(--ink); }
-dialog::backdrop { background: rgba(0, 0, 0, .55); }
-.sform { padding: 0 var(--sp-4) var(--sp-4); display: grid; gap: var(--sp-3); }
-.sform h2 { font-size: var(--fs-head); line-height: var(--lh-snug); letter-spacing: var(--track-head); background: var(--band); color: var(--on-band); margin: 0 calc(-1 * var(--sp-4)); padding: var(--sp-3) var(--sp-4); }
-.sform label { display: grid; gap: var(--sp-1); }
-.sform label.row { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); text-transform: none; letter-spacing: 0; font-size: var(--fs-body); font-weight: 400; }
-.sform input[type=number] { font-family: inherit; font-size: var(--fs-lead); font-weight: 700; min-height: var(--tap); padding: 0; border: 0; border-bottom: var(--rule-minor) solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); font-variant-numeric: tabular-nums; }
-.sform input[type=number] { -moz-appearance: textfield; appearance: textfield; }
-.sform input[type=number]::-webkit-inner-spin-button, .sform input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.sform input[type=number]:focus-visible { outline: 0; border-bottom-color: var(--accent); box-shadow: 0 var(--rule-minor) 0 var(--accent); }   /* focus as a heavier red rule */
-.sform input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--ink); }
-.unitrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); }
-.seg { display: inline-flex; }
-.seg .chip { min-height: var(--tap); padding: 0 var(--sp-3); }
-.seg .chip + .chip { border-left: 0; }
-.sform .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-2); }
-.sform .actions .chip { min-height: var(--tap); padding: 0 var(--sp-4); }
-.sum { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-4); }
-.sum > div { border-top: var(--rule-hair) solid var(--ink); padding: var(--sp-2) 0 var(--sp-3); }
-.sum b { display: block; margin-top: var(--sp-1); font-size: var(--fs-ride-figure); line-height: var(--lh-tight); letter-spacing: var(--track-figure); text-transform: none; font-variant-numeric: tabular-nums; }
-.sumbar { margin-top: var(--sp-3); }
-
-/* narrow phones: the session picker gets its own row before the ride, and steps aside during it (the step name is on screen) */
-@media (max-width: 400px) {
-  .rbar { flex-wrap: wrap; }
-  .rbar .day { flex: 1 0 100%; }
-  .rbar .chip { flex: 1 1 0; padding: 0 var(--sp-1); }
-  .rbar #btn-settings { flex: 0 0 var(--tap); }
-  body.riding .rbar .day { display: none; }
-}
-
-/* short screens: the same layout, tightened step by step on the spacing scale until it fits without scrolling */
-@media (max-height: 740px) {
-  body.ride { --fs-ride-hr: clamp(4.5rem, min(40vw, 16dvh), 11rem); --fs-ride-clock: clamp(2.5rem, min(16vw, 8.5dvh), 5.25rem); }
-  .rmain { gap: var(--sp-2); padding-top: var(--sp-3); }
-  .rtile { padding: var(--sp-1) 0 var(--sp-2); }
-  .cue { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; min-height: 0; }
-  button.big { min-height: 56px; }
-}
-@media (max-height: 600px) {
-  body.ride { --fs-ride-hr: clamp(4rem, min(40vw, 14dvh), 11rem); --fs-ride-clock: clamp(2.25rem, min(16vw, 8dvh), 5.25rem); --fs-ride-figure: clamp(1.375rem, min(8vw, 4.5dvh), 2.75rem); }
-  .rbar { padding-top: var(--sp-1); padding-bottom: var(--sp-1); }
-  .rbar select, .rbar .chip { min-height: 40px; }
-  .stepcard { padding-top: var(--sp-2); gap: 0; }
-  .progress { margin-top: var(--sp-1); }
-  .hrmeta, .status { min-height: var(--sp-5); }
-  button.big { min-height: 48px; }
-}
-@media (orientation: landscape) and (max-height: 560px) {
-  body.ride { --fs-ride-hr: clamp(3.5rem, 20dvh, 7rem); --fs-ride-clock: clamp(2.25rem, 12dvh, 4rem); --fs-ride-figure: clamp(1.375rem, 7dvh, 2.25rem); }
-  .rmain { column-gap: var(--sp-5); }
-  .cue, .note { display: none; }
-  .rmain { grid-template-columns: 1fr 1fr; }
-  .rtiles { grid-column: 1 / -1; grid-template-columns: repeat(6, minmax(0, 1fr)); }
-}
-
-/* ── the cycling computer: screens, turn banner, map, what's ahead, data, laps ───────────────────────────── */
-.pages { max-width: none; margin: 0; padding: 0; gap: 0; counter-reset: none; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; }
-.pages > .page { flex: 1 0 auto; }
-.rtabs { flex: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: var(--band); border-top: var(--rule-hair) solid #3a3936; }
-.rtabs button {
-  font: inherit; font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); min-height: 40px;
-  background: var(--band); color: var(--on-band); border: 0; border-bottom: 4px solid transparent; cursor: pointer; padding: 0 2px;
-}
-.rtabs button[aria-selected="true"] { border-bottom-color: var(--accent); }
-.rtabs button:focus-visible { outline: 2px solid var(--on-band); outline-offset: -4px; }
-
-.navbanner { flex: none; display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--gutter); background: var(--ink); color: var(--page); min-height: 64px; border-left: var(--sp-3) solid var(--s2); }
-.navbanner .arrow { font-size: 2.6rem; line-height: 1; font-weight: 700; width: 1.1em; text-align: center; flex: none; display: inline-block; transition: transform .3s ease; }
+/* ── the turn banner ───────────────────────────────────────────────────────────────────────────────────────── */
+.navbanner { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--gutter); background: #111111; color: #ffffff; min-height: 72px; border-left: var(--sp-3) solid var(--zc2); border-bottom: 1px solid #2a2a2a; }
+.navbanner .arrow { font-size: 2.8rem; line-height: 1; font-weight: 700; width: 1.1em; text-align: center; flex: none; display: inline-block; transition: transform .3s ease; }
 .navbanner .nbtext { flex: 1 1 auto; min-width: 0; font-size: var(--fs-lead); line-height: var(--lh-snug); }
-.navbanner .nbtext b { font-size: var(--fs-ride-figure); letter-spacing: var(--track-figure); font-variant-numeric: tabular-nums; margin-right: var(--sp-1); }
-.navbanner .chip { color: var(--page); border-color: var(--page); min-height: var(--tap); padding: 0 var(--sp-3); }
+.navbanner .nbtext b { font-size: var(--fs-ride-figure); letter-spacing: -.01em; margin-right: var(--sp-1); }
+.navbanner .chip { color: #ffffff; border: 1.5px solid #ffffff; background: transparent; min-height: var(--tap); padding: 0 var(--sp-3); }
 .navbanner.now { border-left-color: var(--accent); }
-.navbanner.alert { background: var(--accent); color: #ffffff; border-left-color: var(--ink); }
-.navbanner.alert .chip { color: #ffffff; border-color: #ffffff; }
+.navbanner.alert { background: #c42b1b; color: #ffffff; border-left-color: #000000; }
 @media (prefers-reduced-motion: reduce) { .navbanner .arrow { transition: none; } }
 
-.tailor { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-1); align-items: stretch; }
-.tailor .chip { min-height: var(--tap); padding: 0 2px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: clip; }
-.tailor .chip:disabled { color: var(--muted); border-color: var(--hair); cursor: default; }
-.tailor .chip:disabled:hover { background: transparent; color: var(--muted); }
-.chip.ghost { border-color: var(--hair); min-height: var(--tap); padding: 0 var(--sp-2); }
-.suggest { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); padding: var(--sp-3); background: var(--ink); color: var(--page); border-left: var(--sp-3) solid var(--s2); font-size: var(--fs-body); }
-.suggest span:first-child { flex: 1 1 14rem; }
-.suggest .sbtns { display: flex; gap: var(--sp-2); }
-.suggest .chip { min-height: var(--tap); padding: 0 var(--sp-4); color: var(--page); border-color: var(--page); background: transparent; }
-.suggest .chip.primary { background: var(--page); color: var(--ink); }
-
-/* map */
+/* ── map ───────────────────────────────────────────────────────────────────────────────────────────────────── */
 #pg-map { display: flex; flex-direction: column; }
 .mapwrap { position: relative; flex: 1 1 auto; min-height: 280px; background: var(--grid); }
 .map, .crumb { position: absolute; inset: 0; width: 100%; height: 100%; }
-.mapfields { position: absolute; left: var(--sp-2); right: var(--sp-2); bottom: var(--sp-6); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--page); border: 1.5px solid var(--ink); box-shadow: var(--sp-1) var(--sp-1) 0 var(--ink); z-index: 2; }
-.mapfields > div { padding: var(--sp-1) var(--sp-2); display: grid; border-right: var(--rule-hair) solid var(--hair); }
+.mapfields { position: absolute; left: var(--sp-2); right: var(--sp-2); bottom: var(--sp-6); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--page); border: 1.5px solid var(--ink); box-shadow: var(--sp-1) var(--sp-1) 0 var(--ink); z-index: 2; }
+.mapfields > div { padding: 6px var(--sp-2); display: grid; border-right: var(--rule-hair) solid var(--hair); }
 .mapfields > div:last-child { border-right: 0; }
-.mapfields .k, .prof .k, .list .k, .climb .k, .lapnow .k, h3.k { font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink-2); }
-.mapfields b { font-size: var(--fs-ride-figure); line-height: var(--lh-tight); letter-spacing: var(--track-figure); font-variant-numeric: tabular-nums; }
+.mapfields .k { color: var(--ink-2); }
+.mapfields b { font-size: var(--fs-ride-figure); line-height: 1; }
 .mapbtns { position: absolute; right: var(--sp-2); top: var(--sp-2); display: grid; gap: var(--sp-2); z-index: 2; }
-.mapbtns .chip { min-width: 48px; min-height: 48px; font-size: var(--fs-body); background: var(--page); }
+.mapbtns .chip { min-width: 48px; min-height: 48px; font-size: var(--fs-body); background: var(--page); color: var(--ink); border: 1.5px solid var(--ink); }
 .mapbtns .chip.primary { background: var(--ink); color: var(--page); }
-.mapnote { position: absolute; left: var(--sp-2); top: var(--sp-2); right: 72px; z-index: 2; background: var(--page); border: 1.5px solid var(--ink); padding: var(--sp-2); font-size: var(--fs-small); }
+.mapnote { position: absolute; left: var(--sp-2); top: var(--sp-2); right: 72px; z-index: 2; background: var(--page); color: var(--ink); border: 1.5px solid var(--ink); padding: var(--sp-2); font-size: var(--fs-small); }
 .routebar { flex: none; display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--gutter); border-top: var(--rule-minor) solid var(--ink); }
 .routebar .rname { flex: 1 1 auto; min-width: 0; font-size: var(--fs-small); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .routebar .chip { min-height: var(--tap); padding: 0 var(--sp-4); }
-.me { width: 26px; height: 30px; background: var(--ink); clip-path: polygon(50% 0, 100% 100%, 50% 78%, 0 100%); filter: drop-shadow(0 0 2px #ffffff); }
+.me { width: 26px; height: 30px; background: var(--accent); clip-path: polygon(50% 0, 100% 100%, 50% 78%, 0 100%); filter: drop-shadow(0 0 2px #000000); }
 .maplibregl-ctrl-attrib { font-size: 10px; }
+html[data-theme="dark"] .maplibregl-ctrl-attrib { background: rgba(0, 0, 0, .6) !important; color: #aaa69e; }
+html[data-theme="dark"] .maplibregl-ctrl-attrib a { color: #aaa69e; }
+html[data-theme="dark"] .maplibregl-ctrl-attrib-button { filter: invert(1); }
 
-/* what's ahead */
+/* ── what's ahead ──────────────────────────────────────────────────────────────────────────────────────────── */
 .empty { display: grid; gap: var(--sp-3); justify-items: start; border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-3); }
 .empty .chip { min-height: var(--tap); padding: 0 var(--sp-4); }
 #ahead { display: grid; gap: var(--sp-4); }
-.rtiles.three .v { font-size: var(--fs-ride-figure); }
 .rtile .s.warn { color: var(--accent-ink); font-weight: 700; }
 .prof { margin: 0; display: grid; gap: var(--sp-1); }
+.prof .k, .list .k, .climb .k, h3.k { color: var(--ink-2); }
 .prof canvas { display: block; width: 100%; border-bottom: var(--rule-minor) solid var(--ink); }
 .climb { border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-2); display: grid; gap: var(--sp-1); }
-.climb.on { border-top-color: var(--accent); }
+.climb.on { border-top-color: var(--zc4); }
 .climbrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1) var(--sp-3); }
-.climbrow b { font-size: var(--fs-ride-figure); letter-spacing: var(--track-figure); line-height: var(--lh-tight); }
-.climbrow span { font-size: var(--fs-body); }
-.climbbar { height: var(--sp-2); background: var(--grid); }
-.climbbar span { display: block; height: 100%; width: 0; background: var(--accent); }
+.climbrow b { font-size: var(--fs-ride-figure); line-height: 1; }
+.climbrow span { font-size: var(--fs-body); color: var(--ink-2); }
+.climbbar { height: var(--sp-2); background: var(--grid); overflow: hidden; }
+.climbbar span { display: block; height: 100%; width: 0; background: var(--zc4); }
 .list { display: grid; gap: var(--sp-1); }
 .list h2 { margin: 0; line-height: var(--lh-snug); letter-spacing: var(--track-label); }
 .list ol { list-style: none; margin: 0; padding: 0; }
 .list li { display: grid; grid-template-columns: 2rem 5.5rem minmax(0, 1fr); align-items: baseline; gap: var(--sp-2); padding: var(--sp-2) 0; border-top: var(--rule-hair) solid var(--hair); font-size: var(--fs-body); }
 .list li .ta { font-size: 1.4rem; line-height: 1; text-align: center; }
-.list li b { font-size: var(--fs-lead); }
+.list li b { font-size: var(--fs-lead); font-family: var(--num); }
 .list li.none, .rlist li.none { display: block; color: var(--ink-2); }
 
-/* data */
+/* ── data ──────────────────────────────────────────────────────────────────────────────────────────────────── */
 .rtiles.big { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.rtiles.big .v { font-size: clamp(1.75rem, min(11vw, 6dvh), 3.25rem); }
+.rtiles.big .rtile { padding: var(--sp-2) 0 var(--sp-3); }
+.rtiles.big .v { font-size: clamp(1.9rem, min(12vw, 6.2dvh), 3.5rem); }
 @media (min-width: 640px) { .rtiles.big { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-/* laps */
+/* ── laps ──────────────────────────────────────────────────────────────────────────────────────────────────── */
 .lapnow { display: flex; align-items: baseline; gap: var(--sp-3); border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-2); }
-.lapnow b { font-size: var(--fs-ride-clock); line-height: .95; letter-spacing: var(--track-display); }
+.lapnow b { font-size: var(--fs-ride-clock); line-height: .95; letter-spacing: -.02em; }
 .lapnow .num:last-child { font-size: var(--fs-lead); color: var(--ink-2); }
 table.laps { width: 100%; border-collapse: collapse; font-size: var(--fs-body); font-variant-numeric: tabular-nums; }
-table.laps th { text-align: left; font-size: var(--fs-label); text-transform: uppercase; letter-spacing: var(--track-label); border-bottom: var(--rule-minor) solid var(--ink); padding: var(--sp-1) var(--sp-1) var(--sp-1) 0; }
-table.laps td { border-bottom: var(--rule-hair) solid var(--hair); padding: var(--sp-2) var(--sp-1) var(--sp-2) 0; }
-table.laps td.none { color: var(--ink-2); }
+table.laps th { text-align: left; font-size: var(--fs-label); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink-2); border-bottom: var(--rule-minor) solid var(--ink); padding: var(--sp-1) var(--sp-1) var(--sp-1) 0; }
+table.laps td { border-bottom: 1px solid var(--hair); padding: var(--sp-2) var(--sp-1) var(--sp-2) 0; font-family: var(--num); font-size: var(--fs-lead); }
+table.laps td.none { color: var(--ink-2); font-family: var(--font); font-size: var(--fs-body); }
 
-/* sheets: routes, rides, tailor */
-dialog { max-height: calc(100dvh - 2 * var(--sp-4)); overflow-y: auto; }
+/* ── sheets ────────────────────────────────────────────────────────────────────────────────────────────────── */
+dialog { border: 1.5px solid var(--ink); border-radius: 0; background: var(--page); color: var(--ink); padding: 0; width: min(calc(100vw - 2 * var(--sp-4)), 440px);
+  max-height: calc(100dvh - 2 * var(--sp-4)); overflow-y: auto; box-shadow: var(--sp-2) var(--sp-2) 0 var(--ink); }
+dialog::backdrop { background: rgba(0, 0, 0, .7); }
+.sform { padding: 0 var(--sp-4) var(--sp-4); display: grid; gap: var(--sp-3); }
+.sform h2 { font-size: var(--fs-head); line-height: var(--lh-snug); letter-spacing: var(--track-head); background: var(--band); color: var(--on-band); margin: 0 calc(-1 * var(--sp-4)); padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid #2a2a2a; }
+.sform label { display: grid; gap: var(--sp-1); color: var(--ink-2); }
+.sform label.row { display: flex; align-items: center; gap: var(--sp-2); min-height: var(--tap); text-transform: none; letter-spacing: 0; font-size: var(--fs-body); font-weight: 400; color: var(--ink); }
+.sform input[type=number] { font-family: var(--num); font-size: var(--fs-lead); font-weight: 700; min-height: var(--tap); padding: 0; border: 0; border-bottom: var(--rule-minor) solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield; appearance: textfield; }
+.sform input[type=number]::-webkit-inner-spin-button, .sform input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.sform input[type=number]:focus-visible { outline: 0; border-bottom-color: var(--accent); box-shadow: 0 var(--rule-minor) 0 var(--accent); }
+.sform input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--accent); }
 .sform select { font-family: inherit; font-size: var(--fs-body); min-height: var(--tap); border: 0; border-bottom: var(--rule-minor) solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); }
+.sform select option { background: var(--page); color: var(--ink); }
 .sform h3 { margin: var(--sp-2) 0 0; }
+.unitrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink-2); }
+.seg { display: inline-flex; }
+.seg .chip { min-height: var(--tap); padding: 0 var(--sp-3); }
+.seg .chip + .chip { border-left: 0; }
+.sform .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); margin-top: var(--sp-2); }
 .sform .actions.left { justify-content: flex-start; margin-top: 0; }
+.sform .actions .chip { min-height: var(--tap); padding: 0 var(--sp-4); }
+.sum { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--sp-4); color: var(--ink-2); }
+.sum > div { border-top: var(--rule-hair) solid var(--ink); padding: var(--sp-2) 0 var(--sp-3); }
+.sum b { display: block; margin-top: var(--sp-1); font-size: var(--fs-ride-figure); line-height: var(--lh-tight); color: var(--ink); text-transform: none; letter-spacing: 0; }
+.sumbar { margin-top: var(--sp-3); }
 .tgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
 .tgrid .chip { min-height: var(--tap); }
 .filebtn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); padding: 0 var(--sp-4); cursor: pointer; font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); border: 1.5px solid var(--ink); }
 .filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
 .rlist { list-style: none; margin: 0; padding: 0; }
-.rlist li { border-top: var(--rule-hair) solid var(--ink); padding: var(--sp-2) 0; display: grid; gap: var(--sp-2); }
+.rlist li { border-top: var(--rule-hair) solid var(--ink); padding: var(--sp-3) 0; display: grid; gap: var(--sp-2); }
 .rlist li.cur { border-top: var(--rule-major) solid var(--accent); }
 .rl-main { display: grid; gap: 2px; }
 .rl-main b { font-size: var(--fs-body); }
@@ -719,16 +722,76 @@ dialog { max-height: calc(100dvh - 2 * var(--sp-4)); overflow-y: auto; }
 .rl-btns .chip { min-height: var(--tap); padding: 0 var(--sp-3); }
 .exports { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
 .exports .chip { min-height: var(--tap); padding: 0 var(--sp-4); }
-.pages:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ── narrow phones (a Pixel 7 is 412 px): the session picker takes its own row before the ride and steps aside during it ── */
+@media (max-width: 480px) {
+  .rbar { flex-wrap: wrap; row-gap: var(--sp-1); }
+  .rbar .day { flex: 1 0 100%; }
+  .rbar .chip { flex: 0 1 auto; padding: 0 10px; }
+  body.riding .rbar .day { display: none; }
+  body:not(.riding) .rbar .chip.sensor { flex: 1 1 0; }
+}
+
+/* ── short screens: the same layout, tightened step by step until it fits without scrolling ─────────────────── */
+@media (max-height: 760px) {
+  body.ride { --fs-ride-hr: clamp(4rem, min(40vw, 15dvh), 11rem); --fs-ride-clock: clamp(2.25rem, min(17vw, 9dvh), 5.5rem); --fs-ride-figure: clamp(1.4rem, min(8.5vw, 4.6dvh), 2.75rem); }
+  .rmain { gap: var(--sp-2); padding-top: var(--sp-2); }
+  .rtile { padding: 6px var(--sp-2) 8px; }
+  .cue { -webkit-line-clamp: 1; }
+  button.big { min-height: 60px; }
+}
+@media (max-height: 640px) {
+  body.ride { --fs-ride-hr: clamp(3.5rem, min(38vw, 13dvh), 11rem); --fs-ride-clock: clamp(2rem, min(16vw, 8dvh), 5.25rem); --fs-ride-figure: clamp(1.25rem, min(8vw, 4.2dvh), 2.5rem); }
+  .rbar select, .rbar .chip { min-height: 40px; }
+  .rtabs button { min-height: 34px; }
+  .hrmeta, .status { min-height: 30px; }
+  .wxbar { display: none; }
+  button.big { min-height: 52px; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  body.ride { --fs-ride-hr: clamp(3.5rem, 20dvh, 7rem); --fs-ride-clock: clamp(2.25rem, 12dvh, 4rem); --fs-ride-figure: clamp(1.375rem, 7dvh, 2.25rem); }
+  .rmain { column-gap: var(--sp-5); grid-template-columns: 1fr 1fr; }
+  .cue, .note { display: none; }
+  .rtiles { grid-column: 1 / -1; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+/* ── before the ride: why today's ride is today's ride ─────────────────────────────────────────────────────── */
+.brief { border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-2); display: grid; gap: var(--sp-1); }
+.brief .k { font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink-2); }
+.brief .call { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-lead); font-weight: 700; line-height: var(--lh-snug); }
+.brief .score { display: inline-grid; place-items: center; min-width: 48px; height: 48px; padding: 0 6px; font-size: var(--fs-head); font-family: var(--num); font-variant-numeric: tabular-nums;
+  background: var(--ink); color: var(--page); flex: none; }
+.brief .score[data-level="hard"] { background: var(--good); color: #000000; } .brief .score[data-level="moderate"] { background: var(--zc2); color: #ffffff; }
+.brief .score[data-level="easy"] { background: var(--warn); color: #000000; } .brief .score[data-level="rest"] { background: #c42b1b; color: #ffffff; }
+.brief ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: var(--fs-small); color: var(--ink-2); }
+.brief li::before { content: "— "; color: var(--muted); }
+body.riding .brief { display: none; }
+/* a turn on the banner takes the room the weather had; the readings shrink a step to keep everything on screen */
+body.nav.riding .wxbar { display: none; }
+body.nav { --fs-ride-hr: clamp(4rem, min(38vw, 14.5dvh), 10rem); --fs-ride-clock: clamp(2.25rem, min(17vw, 8.5dvh), 5.5rem); }
+body.nav .cue { -webkit-line-clamp: 1; }
+body.nav .rmain { gap: var(--sp-2); }
+@media (max-width: 380px) {
+  .sbbatt { display: none; }
+  .rbar { gap: var(--sp-1); padding-left: var(--sp-2); padding-right: var(--sp-2); }
+  .rbar .chip { padding: 0 6px; }
+}
+@media (max-height: 660px) { body.riding .cue, body.riding .next { display: none; } }
+/* after the ride: what it did */
+.did { border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-2); margin-bottom: var(--sp-3); display: grid; gap: var(--sp-1); }
+.did ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-1); font-size: var(--fs-body); line-height: 1.35; }
+.did li::before { content: "— "; color: var(--muted); }
 </style>
 </head>
 <body class="ride">
   <header class="rtop">
   <div class="rbar">
     <label class="day"><span class="sr">Session</span><select id="day"></select></label>
+    <span class="sbclock num" id="sb-clock" aria-hidden="true"></span>
     <button type="button" class="chip sensor" id="btn-hr" aria-label="Connect heart-rate sensor"><i></i>HR</button>
     <button type="button" class="chip sensor" id="btn-csc" aria-label="Connect cadence, speed or power sensor"><i></i>Cad</button>
     <span class="chip sensor" id="gps-chip"><i></i>GPS</span>
+    <span class="sbbatt num" id="sb-batt" aria-hidden="true"></span>
     <button type="button" class="chip" id="btn-settings" aria-label="Settings">⚙</button>
   </div>
 
@@ -752,15 +815,22 @@ dialog { max-height: calc(100dvh - 2 * var(--sp-4)); overflow-y: auto; }
 
     <section class="page rmain" id="pg-workout" role="tabpanel" aria-labelledby="tab-workout">
       <section class="stepcard" id="stepcard" aria-live="polite">
-        <div class="stepname" id="step-name">Free ride</div>
+        <div class="stephead"><div class="stepname" id="step-name">Free ride</div><button type="button" class="chip more" id="w-tailor" aria-label="Change the workout">Change</button></div>
         <div class="steptime num" id="step-time">—</div>
         <div class="target" id="step-target"></div>
+        <div class="gauge" id="gauge" hidden aria-hidden="true"><span class="band" id="g-band"></span><b class="mark" id="g-mark"></b></div>
         <div class="progress" aria-hidden="true"><span id="step-bar"></span></div>
         <div class="cue" id="step-cue"></div>
         <div class="next" id="step-next"></div>
       </section>
 
-      <div class="suggest" id="suggest" hidden role="status"><span id="suggest-text"></span><span class="sbtns"><button type="button" class="chip primary" id="suggest-yes">Yes</button><button type="button" class="chip" id="suggest-no">No</button></span></div>
+      <div class="suggest" id="suggest" hidden role="status"><span id="suggest-text"></span><span class="sbtns"><button type="button" class="chip" id="suggest-yes">Undo</button><button type="button" class="chip primary" id="suggest-no">OK</button></span></div>
+
+      <section class="brief" id="brief" hidden aria-label="Today">
+        <div class="k">Today<span id="b-race"></span></div>
+        <div class="call"><span class="score" id="b-score"></span><span id="b-title"></span></div>
+        <ul id="b-why"></ul>
+      </section>
 
       <section class="hrcard" id="hrcard">
         <div class="hrval num" id="hr">—</div>
@@ -776,14 +846,6 @@ dialog { max-height: calc(100dvh - 2 * var(--sp-4)); overflow-y: auto; }
         <div class="rtile"><span class="k">Avg HR</span><span class="v num" id="t-avg">—</span></div>
         <div class="rtile"><span class="k">Load</span><span class="v num" id="t-load">0</span></div>
       </section>
-
-      <div class="tailor" role="group" aria-label="Tailor the workout">
-        <button type="button" class="chip" id="w-easier" aria-label="Easier: targets down 5%">Easier</button>
-        <span class="chip ghost num" id="w-int" aria-live="polite">100%</span>
-        <button type="button" class="chip" id="w-harder" aria-label="Harder: targets up 5%">Harder</button>
-        <button type="button" class="chip" id="w-more" aria-label="One more minute on this step">+1 min</button>
-        <button type="button" class="chip primary" id="w-tailor">Tailor</button>
-      </div>
 
       <section class="rtiles wxbar" id="wxbar" hidden aria-label="Weather">
         <div class="rtile"><span class="k">Temp</span><span class="v num" id="wx-temp">—</span><span class="s" id="wx-feels"></span></div>
@@ -863,7 +925,7 @@ dialog { max-height: calc(100dvh - 2 * var(--sp-4)); overflow-y: auto; }
         <div class="rtile"><span class="k" id="d-pw-k">Power</span><span class="v num" id="d-pw">—</span></div>
         <div class="rtile"><span class="k">Cadence</span><span class="v num" id="d-cad">—</span></div>
         <div class="rtile"><span class="k">Time of day</span><span class="v num" id="d-clock">—</span></div>
-        <div class="rtile"><span class="k">Sunset</span><span class="v num" id="d-sunset">—</span></div>
+        <div class="rtile"><span class="k">Light left</span><span class="v num" id="d-sunset">—</span><span class="s" id="d-sunset-at"></span></div>
         <div class="rtile"><span class="k">Elevation</span><span class="v num" id="d-ele">—</span></div>
         <div class="rtile"><span class="k">Battery</span><span class="v num" id="d-batt">—</span></div>
       </section>
@@ -918,7 +980,8 @@ dialog { max-height: calc(100dvh - 2 * var(--sp-4)); overflow-y: auto; }
 
   <dialog id="tailor" aria-labelledby="tailor-h">
     <form method="dialog" class="sform">
-      <h2 id="tailor-h">Tailor the workout</h2>
+      <h2 id="tailor-h">Change the workout</h2>
+      <p class="note">The app adjusts the session on its own (readiness, fatigue, heat, the day's load). This is for when life changes the ride: less time, more time, a different workout.</p>
       <p class="note" id="tl-load"></p>
       <div class="tgrid" role="group" aria-label="This step and set">
         <button type="button" class="chip" data-tl="less">−1 min</button>
@@ -927,7 +990,6 @@ dialog { max-height: calc(100dvh - 2 * var(--sp-4)); overflow-y: auto; }
         <button type="button" class="chip" data-tl="back">Previous step</button>
         <button type="button" class="chip" data-tl="rep">One more rep</button>
         <button type="button" class="chip" data-tl="cut">Cut the set</button>
-        <button type="button" class="chip" data-tl="load" id="tl-hit" hidden>Hit today's load</button>
       </div>
       <label>Time I have left (min) <input id="tl-left" type="number" inputmode="numeric" min="5" max="600"></label>
       <div class="actions left"><button type="button" class="chip primary" data-tl="fit">Fit the rest to it</button></div>
@@ -1247,7 +1309,7 @@ self.RideCore = (() => {
   /** Where a point sits on the route: its distance along, how far off it is, and the course there.
    *  `near` (a distance along) keeps the search on the stretch you're riding, so an out-and-back or a figure eight
    *  doesn't jump to the other side; with nothing close there it falls back to the whole route. */
-  function project(route, p, near = null, ahead = 2500, behind = 300) {
+  function project(route, p, near = null, ahead = 2500, behind = 300, strict = false) {
     const { xs, ys, cum, frame } = route, n = xs.length;
     const px = (p.lon - frame.lon) * frame.kx, py = (p.lat - frame.lat) * frame.ky;
     const scan = (lo, hi) => {
@@ -1263,7 +1325,7 @@ self.RideCore = (() => {
     const idx = d => { let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= d) lo = m; else hi = m; } return lo; };
     let best = null;
     if (near != null) best = scan(idx(Math.max(0, near - behind)), Math.min(n - 1, idx(Math.min(route.total, near + ahead)) + 1));
-    if (!best || best.off > 75) { const all = scan(0, n - 1); if (!best || all.off + 25 < best.off) best = all; }
+    if (!best || (best.off > 75 && !strict)) { const all = scan(0, n - 1); if (!best || all.off + 25 < best.off) best = all; }
     const a = route.pts[best.i], b = route.pts[Math.min(n - 1, best.i + 1)];
     return { along: best.along, off: best.off, i: best.i, brg: bearing(a, b) };
   }
@@ -1311,18 +1373,32 @@ self.RideCore = (() => {
       if (s.left < 30 && !st.said.has("arrive")) { st.said.add("arrive"); out.push({ kind: "arrive" }); }
       return out;
     }
-    /** Where to rejoin: the nearest point of the route ahead of the last one you were on, weighing distance from here
-     *  against skipping route (300 m of skipped route costs like 100 m of detour). */
-    function rejoin(fix) {
-      let best = null;
-      for (let d = st.lastOnAlong + 150; d <= Math.min(route.total, st.lastOnAlong + 4000); d += 50) {
-        const p = pointAt(route, d), cost = hav(fix, p) + (d - st.lastOnAlong) / 3;
-        if (!best || cost < best.cost) best = { cost, along: d, lat: p.lat, lon: p.lon };
+    /** Where to rejoin, looking forward: places on the route ahead of both where you left it and where you are now
+     *  (your position projected onto it), so a parallel road leads you on rather than back. Each is weighed by distance
+     *  from here, more when it lies behind your direction of travel (×1.4 past 60°, ×2.5 past 110°), plus a third of
+     *  the route it skips, plus 250 m when you'd meet the route head-on. The best three, 400 m+ apart, go to the router
+     *  together (fromBRouter + pickDetour); `avoid` is just past where you left, the likely blockage (a locked gate,
+     *  a closed bridge), so no way back runs through it. */
+    function rejoinOptions(fix, heading = null) {
+      const here = project(route, fix, st.lastOnAlong, 8000, 100, true);
+      const minAlong = Math.min(route.total, Math.max(st.lastOnAlong + 150, here.along + 100));
+      const all = [];
+      for (let d = minAlong; d <= Math.min(route.total, minAlong + 6000); d += 50) {
+        const p = pointAt(route, d), dist = hav(fix, p), brg = bearing(fix, p);
+        const ang = heading == null || dist < 40 ? 0 : Math.abs(turnAngle(heading, brg));
+        const against = dist > 60 && Math.abs(turnAngle(brg, p.brg)) > 120;
+        all.push({ along: d, lat: p.lat, lon: p.lon, dist, cost: dist * (ang > 110 ? 2.5 : ang > 60 ? 1.4 : 1) + (d - minAlong) * 0.3 + (against ? 250 : 0) });
       }
-      return best || { along: route.total, ...pointAt(route, route.total) };
+      all.sort((a, b) => a.cost - b.cost);
+      const options = [];
+      for (const c of all) if (options.length < 3 && options.every(o => Math.abs(o.along - c.along) >= 400)) options.push(c);
+      if (!options.length) options.push({ along: route.total, ...pointAt(route, route.total), dist: hav(fix, route.pts[route.pts.length - 1]), cost: 0 });
+      const left = pointAt(route, Math.min(route.total, st.lastOnAlong + 60));
+      return { options, minAlong, avoid: st.lastOnAlong > 0 && st.lastOnAlong < route.total - 100 ? { lat: left.lat, lon: left.lon, r: 40 } : null };
     }
+    const rejoin = (fix, heading = null) => rejoinOptions(fix, heading).options[0];
     const toRoute = fix => { const p = pointAt(route, project(route, fix, st.lastOnAlong).along); return { dist: hav(fix, p), brg: bearing(fix, p), lat: p.lat, lon: p.lon }; };
-    return { update, status, callouts, rejoin, toRoute, state: st, seek(along) { st.along = along; st.lastOnAlong = along; st.said.clear(); } };
+    return { update, status, callouts, rejoin, rejoinOptions, toRoute, state: st, seek(along) { st.along = along; st.lastOnAlong = along; st.said.clear(); } };
   }
 
   /** A BRouter answer (GeoJSON, with voicehints when asked for) → a parsed route whose turns are the router's. */
@@ -1347,8 +1423,25 @@ self.RideCore = (() => {
     return r;
   }
   /** The URL of a BRouter route from → to (the public server: free, no key, cycling profiles). */
-  const brouterUrl = (from, to, profile = "trekking", server = "https://brouter.de/brouter") =>
-    `${server}?lonlats=${from.lon.toFixed(6)},${from.lat.toFixed(6)}|${to.lon.toFixed(6)},${to.lat.toFixed(6)}&profile=${encodeURIComponent(profile)}&alternativeidx=0&format=geojson&timode=3`;
+  const brouterUrl = (from, to, profile = "trekking", server = "https://brouter.de/brouter", nogos = []) =>
+    `${server}?lonlats=${from.lon.toFixed(6)},${from.lat.toFixed(6)}|${to.lon.toFixed(6)},${to.lat.toFixed(6)}&profile=${encodeURIComponent(profile)}&alternativeidx=0&format=geojson&timode=3`
+    + (nogos.length ? `&nogos=${nogos.map(g => `${g.lon.toFixed(6)},${g.lat.toFixed(6)},${Math.round(g.r)}`).join("|")}` : "");
+  /** The best of several ways back (parsed BRouter routes, one per rejoin option): the shortest ride once a U-turn at the
+   *  start (600 m), arriving against the route's direction (300 m) and a third of the route skipped are counted in.
+   *  @returns {{detour: any, option: any, score: number} | null} */
+  function pickDetour(route, tries, heading = null, minAlong = 0) {
+    let best = null;
+    for (const { detour, option } of tries) {
+      if (!detour) continue;
+      const a = detour.pts[0], b = pointAt(detour, Math.min(detour.total, 80));
+      const back = heading != null && detour.total > 80 && Math.abs(turnAngle(heading, bearing(a, b))) > 110;
+      const end = detour.pts[detour.pts.length - 1], before = pointAt(detour, Math.max(0, detour.total - 60));
+      const against = detour.total > 60 && Math.abs(turnAngle(bearing(before, end), pointAt(route, option.along).brg)) > 135;
+      const score = detour.total + (back ? 600 : 0) + (against ? 300 : 0) + Math.max(0, option.along - minAlong) * 0.3;
+      if (!best || score < best.score) best = { detour, option, score, back, against };
+    }
+    return best;
+  }
 
   // ── the sun (after Agafonkin's SunCalc, from the NOAA / Astronomical Almanac formulas) ────────────────────────
   function sunTimes(date, lat, lon) {
@@ -1480,6 +1573,28 @@ self.RideCore = (() => {
   const PCT = [[0, 0], [68, 45], [81, 56], [90, 76], [94, 91], [100, 101], [106, 118], [110, 135]];
   const ftpPct = lthrPct => { for (let i = 1; i < PCT.length; i++) if (lthrPct <= PCT[i][0]) { const [a, pa] = PCT[i - 1], [b, pb] = PCT[i]; return pa + (pb - pa) * (lthrPct - a) / (b - a); } return 150; };
 
+  // ── the commute check: the same road every day makes heart rate at a speed a daily fitness reading ───────────
+  /** Judged on steady riding only. City riding (stops, lights, sprints away from them) puts heart rate out of step with
+   *  speed, so: samples count only when rolling 15 km/h+ at an even speed a minute or more after a stop (the caller marks
+   *  them `steady`), it needs 4 minutes of those in the last 8, and 4+ stops in the last 10 minutes means stop-and-go:
+   *  no verdict at all. Hot is 8+ bpm over what this leg usually costs at that speed; fresh is 5+ under.
+   *  @param {{t: number, hr: number, kmh: number, steady: boolean}[]} samples  t in seconds of ride time
+   *  @param {any} model  cfg.commute[leg]: {model: [a, b]} (HR = a + b × km/h) or {hr, speed}
+   *  @param {number[]} stops  ride-time seconds each stop began */
+  function commuteCheck(samples, model, stops, now) {
+    if (!model || now < 480) return null;
+    if (stops.filter(t => t > now - 600).length >= 4) return { verdict: "city" };
+    const recent = samples.filter(x => x.steady && x.t > now - 480);
+    if (recent.length < 240) return null;
+    const hr = recent.reduce((a, x) => a + x.hr, 0) / recent.length, kmh = recent.reduce((a, x) => a + x.kmh, 0) / recent.length;
+    let usual = null;
+    if (Array.isArray(model.model)) usual = model.model[0] + model.model[1] * kmh;
+    else if (model.hr && Math.abs(kmh - model.speed) < 1.5) usual = model.hr;
+    if (usual == null) return null;
+    const diff = hr - usual;
+    return { diff, kmh, verdict: diff >= 8 ? "hot" : diff <= -5 ? "fresh" : "normal", minutes: recent.length / 60 };
+  }
+
   // ── files: the recorded ride out ────────────────────────────────────────────────────────────────────────
   // A sample is [t ms, lat, lon, ele m, hr, cadence, power, speed m/s, distance m]; nulls where a sensor said nothing.
   const FIT_EPOCH = 631065600;   // 1989-12-31T00:00:00Z
@@ -1600,6 +1715,48 @@ self.RideCore = (() => {
     return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Training ride mode" xmlns="http://www.topografix.com/GPX/1/1">\n${wpts}\n<trk><name>${xml(route.name)}</name><trkseg>\n${pts}\n</trkseg></trk>\n</gpx>\n`;
   }
 
+  // ── the map at night: OpenFreeMap's day style turned dark, the way a bike computer's night mode is ───────────
+  // Every color in the style's paint is flipped in lightness (paper becomes near-black, dark labels become light) and
+  // calmed a little, so the route and your position are the brightest things on the screen.
+  const COLOR_KEYS = new Set(["background-color", "fill-color", "fill-outline-color", "line-color", "text-color", "text-halo-color", "icon-color", "icon-halo-color",
+    "circle-color", "circle-stroke-color", "fill-extrusion-color", "hillshade-shadow-color", "hillshade-highlight-color", "hillshade-accent-color"]);
+  function parseColor(c) {
+    let m = /^#([0-9a-f]{3,8})$/i.exec(c);
+    if (m) {
+      let h = m[1];
+      if (h.length <= 4) h = [...h].map(x => x + x).join("");
+      return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16), h.length === 8 ? parseInt(h.slice(6, 8), 16) / 255 : 1];
+    }
+    if ((m = /^rgba?\(([^)]+)\)$/i.exec(c))) { const v = m[1].split(/[\s,/]+/).filter(Boolean).map(parseFloat); return [v[0], v[1], v[2], v[3] ?? 1]; }
+    if ((m = /^hsla?\(([^)]+)\)$/i.exec(c))) {
+      const v = m[1].split(/[\s,/]+/).filter(Boolean).map(parseFloat), hh = v[0] / 360, ss = v[1] / 100, ll = v[2] / 100;
+      const q = ll < 0.5 ? ll * (1 + ss) : ll + ss - ll * ss, p = 2 * ll - q;
+      const f = t => { t = (t + 1) % 1; return 255 * (t < 1 / 6 ? p + (q - p) * 6 * t : t < 0.5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p); };
+      return [f(hh + 1 / 3), f(hh), f(hh - 1 / 3), v[3] ?? 1];
+    }
+    return null;
+  }
+  function nightColor(c) {
+    const rgb = typeof c === "string" ? parseColor(c.trim()) : null;
+    if (!rgb) return c;
+    const [r, g, b, a] = rgb.map((x, i) => (i < 3 ? x / 255 : x)), mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+    const d = mx - mn, sat = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+    let h = 0;
+    if (d) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    const L = 0.05 + (1 - l) * 0.82, S = sat * 0.6;
+    return `hsla(${Math.round((h * 60 + 360) % 360)}, ${Math.round(S * 100)}%, ${Math.round(L * 100)}%, ${Math.round(a * 100) / 100})`;
+  }
+  const nightValue = v => Array.isArray(v) ? v.map(nightValue) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, nightValue(x)])) : nightColor(v);
+  /** A copy of a MapLibre style with its paint colors at night. */
+  function nightStyle(style) {
+    const out = JSON.parse(JSON.stringify(style));
+    for (const l of out.layers || []) {
+      if (!l.paint) continue;
+      for (const k of Object.keys(l.paint)) if (COLOR_KEYS.has(k)) l.paint[k] = nightValue(l.paint[k]);
+    }
+    return out;
+  }
+
   // ── tiles: the web-mercator tiles covering a corridor along the route ─────────────────────────────────────
   const tileXY = (lat, lon, z) => { const n = 2 ** z, x = (lon + 180) / 360 * n, s = Math.sin(rad(clamp(lat, -85.05, 85.05))); return [x, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n]; };
   function corridorTiles(route, zmin = 8, zmax = 14, buffer = 800) {
@@ -1622,8 +1779,8 @@ self.RideCore = (() => {
   const unstore = row => ({ id: row.id, name: row.name, points: row.points.map(p => ({ lat: p[0], lon: p[1], ele: p[2] })), marks: row.marks || [] });
   const reversed = raw => ({ ...raw, name: `${raw.name} (reversed)`, points: [...raw.points].reverse(), marks: (raw.marks || []).filter(m => !m.cue) });
 
-  return { hav, bearing, turnAngle, parseRoute, analyze, eleAt, gradeAt, pointAt, project, navigator, fromBRouter, brouterUrl, sunTimes, kindFromAngle, TURN_WORDS, TURN_ARROWS,
-    ZONES, QUICK, quick, isWork, isEasy, setOf, addRep, cutSet, extend, fitTime, ftpPct, toFIT, toGPX, toTCX, routeGPX, stats, fitCrc, corridorTiles, tileXY, storable, unstore, reversed };
+  return { hav, bearing, turnAngle, parseRoute, analyze, eleAt, gradeAt, pointAt, project, navigator, fromBRouter, brouterUrl, pickDetour, sunTimes, kindFromAngle, TURN_WORDS, TURN_ARROWS,
+    commuteCheck, nightStyle, nightColor, ZONES, QUICK, quick, isWork, isEasy, setOf, addRep, cutSet, extend, fitTime, ftpPct, toFIT, toGPX, toTCX, routeGPX, stats, fitCrc, corridorTiles, tileXY, storable, unstore, reversed };
 })();
 </script>
   <script>"use strict";
@@ -1749,7 +1906,7 @@ self.RideCore = (() => {
   // ── ride state (saved every few seconds so a reload mid-ride picks up where it was) ───────────────────────
   const fresh = () => ({ running: false, paused: false, elapsed: 0, moving: 0, dist: 0, step: 0, stepStart: 0, hrSum: 0, hrSecs: 0, hrMax: 0, zones: [0, 0, 0, 0, 0],
     trimp: 0, cadSum: 0, cadSecs: 0, pwSum: 0, pwSecs: 0, fuelAt: 0, fuelDue: false, ended: false, plan: [], intensity: 1, quick: null, rideId: "", wallStart: 0, chunk: 0,
-    laps: [], lapStart: 0, lapElapsed: 0, lapDist: 0, pauses: [], autoPaused: false, still: 0, ascent: 0, maxSpeed: 0, held: 0, missed: 0, hot: 0, loadOffered: false, navAlong: 0, battSaid: false });
+    laps: [], lapStart: 0, lapElapsed: 0, lapDist: 0, pauses: [], autoPaused: false, still: 0, ascent: 0, maxSpeed: 0, held: 0, missed: 0, hot: 0, loadOffered: false, navAlong: 0, battSaid: false, tgtSecs: 0, tgtOn: 0, workSecs: 0, workOn: 0 });
   const S = fresh();
   const live = { heading: null, anchor: null, hr: null, hrAt: 0, cad: null, cadAt: 0, power: null, powerAt: 0, pw: [], wheelSpeed: null, wheelAt: 0, gpsSpeed: null, gpsAt: 0, lastFix: null, alt: null, battery: null };
   let samples = [];
@@ -2029,7 +2186,7 @@ self.RideCore = (() => {
   };
 
   // ── routes: GPX / TCX in, kept on this phone, one chosen for the ride ─────────────────────────────────────
-  const NAV = { route: null, nav: null, st: null, detour: null, routing: false, lastReroute: 0, lastAt: 0, names: new Map(), offSaid: false, lastWrong: 0 };
+  const NAV = { route: null, nav: null, st: null, detour: null, routing: false, lastReroute: 0, lastAt: 0, names: new Map(), offSaid: false, lastWrong: 0, avoid: [] };
   const routeMsg = $("route-msg");
   async function importFile(file) {
     const text = await file.text();
@@ -2082,7 +2239,7 @@ self.RideCore = (() => {
     if (!row) { NAV.route = NAV.nav = NAV.st = NAV.detour = null; ls.set("fitness-ride-route", null); paintRouteBits(); return; }
     const route = C.analyze(C.unstore(row));
     const along = keepProgress && NAV.nav ? NAV.nav.state.along : S.running ? S.navAlong : 0;
-    NAV.route = route; NAV.nav = C.navigator(route, { startAlong: along }); NAV.st = NAV.nav.status(); NAV.detour = null; NAV.names.clear();
+    NAV.route = route; NAV.nav = C.navigator(route, { startAlong: along }); NAV.st = NAV.nav.status(); NAV.detour = null; NAV.avoid = []; NAV.names.clear();
     ls.set("fitness-ride-route", id);
     paintRouteBits();
     mapRoute();
@@ -2221,23 +2378,39 @@ self.RideCore = (() => {
     }
     paintMap(fix);
   }
-  /** A way back to the route (or to its start) from BRouter, followed turn by turn until you're on the route again. */
+  /** A way back to the route (or to its start) from BRouter, followed turn by turn until you're on the route again.
+   *  Back to the route looks forward (RideCore navigator.rejoinOptions): up to three places on the route ahead of you
+   *  are routed at once, the spot where you left the route is a no-go (the locked gate stays locked), and the best way
+   *  is the shortest that doesn't start with a U-turn (RideCore.pickDetour). */
   async function reroute(kind) {
     const fix = live.lastFix;
     if (NAV.routing || !NAV.route || !fix) return;
     NAV.routing = true; NAV.lastReroute = Date.now();
-    const target = kind === "start" ? { along: 0, ...C.pointAt(NAV.route, 0) } : NAV.nav.rejoin(fix);
     paintBanner();
-    try {
-      const r = await timed(C.brouterUrl(fix, target, P.profile), 15000);
-      if (!r.ok) throw new Error(`router ${r.status}`);
-      const d = C.fromBRouter(await r.json(), kind === "start" ? "To the start" : "Back to the route");
-      NAV.detour = { route: d, nav: C.navigator(d), target, kind };
+    const heading = (speedNow() ?? 0) > 1.5 ? live.heading : null;
+    const name = kind === "start" ? "To the start" : "Back to the route";
+    let options = [{ along: 0, ...C.pointAt(NAV.route, 0) }], minAlong = 0;
+    if (kind !== "start") {
+      const r = NAV.nav.rejoinOptions(fix, heading);
+      options = r.options; minAlong = r.minAlong;
+      if (r.avoid && !NAV.avoid.some(g => hav(g, r.avoid) < 30)) NAV.avoid = [...NAV.avoid, r.avoid].slice(-3);
+    }
+    const ask = async option => {
+      try {
+        const res = await timed(C.brouterUrl(fix, option, P.profile, undefined, kind === "start" ? [] : NAV.avoid), 15000);
+        return res.ok ? { detour: C.fromBRouter(await res.json(), name), option } : { detour: null, option };
+      } catch { return { detour: null, option }; }
+    };
+    const best = C.pickDetour(NAV.route, await Promise.all(options.map(ask)), heading, minAlong);
+    if (best) {
+      const d = best.detour;
+      NAV.detour = { route: d, nav: C.navigator(d), target: best.option, kind };
       NAV.detour.st = NAV.detour.nav.update(fix, live.heading, speedNow() ?? 0);
-      const t = d.turns[0];
-      say(kind === "start" ? `Directions to the start: ${nearSay(d.total)}.` : `Rerouting. ${nearSay(d.total)} back to the route.${t ? ` First, in ${nearSay(t.along)}, ${turnText(t).replace(" · ", ", ")}.` : ""}`);
+      const t = d.turns[0], skip = best.option.along - (NAV.nav.state.lastOnAlong || 0);
+      say(kind === "start" ? `Directions to the start: ${nearSay(d.total)}.`
+        : `Rerouting ahead. ${nearSay(d.total)} to rejoin the route${skip > 400 ? `, ${nearSay(skip)} further along it` : ""}.${t ? ` First, in ${nearSay(t.along)}, ${turnText(t).replace(" · ", ", ")}.` : ""}`);
       mapDetour();
-    } catch {
+    } else {
       const back = NAV.nav.toRoute(fix);
       note.textContent = `No way back from the router (no signal?). The route is ${nearTxt(back.dist)} ${compass(back.brg)} of you.`;
       if (S.running) say(`The route is ${nearSay(back.dist)} to the ${({ N: "north", NE: "northeast", E: "east", SE: "southeast", S: "south", SW: "southwest", W: "west", NW: "northwest" })[compass(back.brg)]}.`, false);
@@ -2246,6 +2419,10 @@ self.RideCore = (() => {
     paintBanner(); renderAhead(true);
   }
   function paintBanner() {
+    paintBannerInner();
+    document.body.classList.toggle("nav", !$("navbanner").hidden);
+  }
+  function paintBannerInner() {
     const b = $("navbanner"), A = active(), page = curPage();
     if (!A || !NAV.st) { b.hidden = true; return; }
     const st = NAV.detour ? NAV.detour.st || NAV.detour.nav.status() : NAV.st;
@@ -2292,7 +2469,10 @@ self.RideCore = (() => {
       const lib = await import("./vendor/maplibre-gl.mjs");
       MAP.lib = lib;
       const r = NAV.route, c = live.lastFix ? [live.lastFix.lon, live.lastFix.lat] : r ? [r.pts[0].lon, r.pts[0].lat] : [-84.5, 42.7];
-      const map = new lib.Map({ container: "map", style: STYLE_URL, center: c, zoom: r && !live.lastFix ? 11 : 14, attributionControl: { compact: true }, dragRotate: false, pitchWithRotate: false, maxPitch: 0, fadeDuration: 0, cooperativeGestures: false });
+      // the day style, or the same style turned dark (RideCore.nightStyle) when the app is dark
+      let style = STYLE_URL;
+      try { const res = await timed(STYLE_URL, 8000); if (res.ok) { const j = await res.json(); style = isDark() ? C.nightStyle(j) : j; } } catch { /* MapLibre tries the URL itself */ }
+      const map = new lib.Map({ container: "map", style, center: c, zoom: r && !live.lastFix ? 11 : 14, attributionControl: { compact: true }, dragRotate: false, pitchWithRotate: false, maxPitch: 0, fadeDuration: 0, cooperativeGestures: false });
       MAP.map = map;
       const t = setTimeout(() => { if (!MAP.ready) { $("crumb").hidden = false; mapNote(navigator.onLine ? "The map is slow to load; showing the route meanwhile." : "No signal and no saved map here: showing the route and your track. Routes → a route's map saves itself when you load it online."); drawCrumb(); } }, 9000);
       map.on("error", () => { /* a missing tile offline is expected; the breadcrumb covers a missing style */ });
@@ -2301,15 +2481,15 @@ self.RideCore = (() => {
         for (const l of map.getStyle().layers || []) if (l["source-layer"] === "poi" || /^poi/.test(l.id)) map.setLayoutProperty(l.id, "visibility", "none");   // a bike screen, not a guidebook
         const add = (id, data) => map.addSource(id, { type: "geojson", data: data || { type: "FeatureCollection", features: [] } });
         add("route"); add("climbs"); add("done"); add("detour"); add("trail"); add("marks");
-        const ink = css("--ink"), acc = css("--accent");
-        map.addLayer({ id: "route-casing", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#ffffff", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 5, 16, 12] } });
+        const ink = css("--ink"), acc = css("--accent"), dark = isDark(), halo = dark ? "#000000" : "#ffffff", blue = dark ? "#5b8fe0" : "#1f5bb5";
+        map.addLayer({ id: "route-casing", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": halo, "line-width": ["interpolate", ["linear"], ["zoom"], 10, 5, 16, 12] } });
         map.addLayer({ id: "route-line", type: "line", source: "route", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": acc, "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 7] } });
         map.addLayer({ id: "climb-line", type: "line", source: "climbs", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": ["step", ["get", "g"], "#fab219", 6, "#ec835a", 9, "#7a1f12"], "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 7] } });
-        map.addLayer({ id: "done-line", type: "line", source: "done", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#8a8780", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 7] } });
-        map.addLayer({ id: "trail-line", type: "line", source: "trail", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#1f5bb5", "line-width": 3, "line-opacity": 0.85 } });
-        map.addLayer({ id: "detour-line", type: "line", source: "detour", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": "#1f5bb5", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 7], "line-dasharray": [1.5, 1] } });
-        map.addLayer({ id: "marks-dot", type: "circle", source: "marks", paint: { "circle-radius": ["case", ["==", ["get", "t"], "turn"], 4, 6], "circle-color": ["case", ["==", ["get", "t"], "turn"], "#ffffff", ink], "circle-stroke-color": ink, "circle-stroke-width": 2 } });
-        map.addLayer({ id: "marks-label", type: "symbol", source: "marks", filter: ["!=", ["get", "t"], "turn"], minzoom: 12, layout: { "text-field": ["get", "label"], "text-size": 13, "text-offset": [0, 1.1], "text-anchor": "top", "text-font": ["Noto Sans Bold"] }, paint: { "text-color": ink, "text-halo-color": "#ffffff", "text-halo-width": 2 } });
+        map.addLayer({ id: "done-line", type: "line", source: "done", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": dark ? "#5c5a56" : "#8a8780", "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 7] } });
+        map.addLayer({ id: "trail-line", type: "line", source: "trail", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": blue, "line-width": 3, "line-opacity": 0.9 } });
+        map.addLayer({ id: "detour-line", type: "line", source: "detour", layout: { "line-join": "round", "line-cap": "round" }, paint: { "line-color": blue, "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 7], "line-dasharray": [1.5, 1] } });
+        map.addLayer({ id: "marks-dot", type: "circle", source: "marks", paint: { "circle-radius": ["case", ["==", ["get", "t"], "turn"], 4, 6], "circle-color": ["case", ["==", ["get", "t"], "turn"], halo, ink], "circle-stroke-color": ink, "circle-stroke-width": 2 } });
+        map.addLayer({ id: "marks-label", type: "symbol", source: "marks", filter: ["!=", ["get", "t"], "turn"], minzoom: 12, layout: { "text-field": ["get", "label"], "text-size": 13, "text-offset": [0, 1.1], "text-anchor": "top", "text-font": ["Noto Sans Bold"] }, paint: { "text-color": ink, "text-halo-color": halo, "text-halo-width": 2 } });
         const el = document.createElement("div"); el.className = "me"; el.setAttribute("aria-hidden", "true");
         MAP.marker = new lib.Marker({ element: el, rotationAlignment: "map", pitchAlignment: "map" }).setLngLat(c);
         if (live.lastFix) { MAP.marker.addTo(map); MAP.markerOn = true; }
@@ -2318,6 +2498,14 @@ self.RideCore = (() => {
       map.on("dragstart", () => { MAP.follow = false; $("m-center").classList.add("primary"); });
       map.on("idle", () => nameTurns());
     } catch { giveUp("The map couldn't start here; showing the route and your track."); }
+  }
+  const isDark = () => (document.documentElement.dataset.theme || "dark") === "dark";
+  /** A theme change rebuilds the map in the other style (the route layers come back with it). */
+  function restyleMap() {
+    if (!MAP.map) return;
+    MAP.map.remove();
+    Object.assign(MAP, { map: null, ready: false, loading: false, failed: false, markerOn: false, marker: null });
+    if (curPage() === "map") ensureMap();
   }
   const line = pts => ({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: pts.map(p => [p.lon, p.lat]) } });
   const set = (id, data) => { const s = MAP.map && MAP.ready && MAP.map.getSource(id); if (s) /** @type {any} */ (s).setData(data); };
@@ -2408,8 +2596,9 @@ self.RideCore = (() => {
       if (NAV.st) path(r.pts.filter((_, i) => r.cum[i] <= NAV.st.along), "#8a8780", 5);
       for (const t of r.turns) { const [x, y] = xy(C.pointAt(r, t.along)); g.beginPath(); g.arc(x, y, 4, 0, 7); g.fillStyle = css("--page"); g.fill(); g.strokeStyle = css("--ink"); g.lineWidth = 2; g.stroke(); }
     }
-    if (NAV.detour) path(NAV.detour.route.pts, "#1f5bb5", 5, [8, 6]);
-    path(samples.filter(s => s[1] != null).map(s => ({ lat: s[1], lon: s[2] })), "#1f5bb5", 3);
+    const blue = isDark() ? "#5b8fe0" : "#1f5bb5";
+    if (NAV.detour) path(NAV.detour.route.pts, blue, 5, [8, 6]);
+    path(samples.filter(s => s[1] != null).map(s => ({ lat: s[1], lon: s[2] })), blue, 3);
     if (live.lastFix) {
       g.save(); g.translate(cx, cy); g.rotate(((live.heading ?? 0) * Math.PI / 180) + rot);
       g.beginPath(); g.moveTo(0, -13); g.lineTo(9, 10); g.lineTo(0, 5); g.lineTo(-9, 10); g.closePath();
@@ -2430,7 +2619,8 @@ self.RideCore = (() => {
 
   // ── what's ahead: profile, climb, turns, stops, wind ──────────────────────────────────────────────────────
   let aheadAt = 0;
-  const gradeColor = g => g >= 9 ? "#7a1f12" : g >= 6 ? css("--serious") : g >= 3 ? css("--warn") : css("--z2");
+  // climb colors as a bike computer shows them: flat in the ground's own grey, then yellow, orange, red and dark red
+  const gradeColor = g => g >= 12 ? "#8e1b10" : g >= 9 ? css("--zc5") : g >= 6 ? css("--zc4") : g >= 3 ? "#f2c200" : css("--muted");
   function drawProfile(cv, r, from, to, at) {
     const dpr = window.devicePixelRatio || 1, W = cv.clientWidth || 320, H = cv.clientHeight || +cv.getAttribute("height");
     cv.width = W * dpr; cv.height = H * dpr;
@@ -2567,24 +2757,27 @@ self.RideCore = (() => {
   const projected = () => { const st = steps(); if (!st.length) return null; const cur = st[S.step]; let t = tssNow(); if (cur) t += Math.max(0, cur.min * 60 - (S.elapsed - S.stepStart)) / 60 * tssPerMin(cur); for (let i = S.step + 1; i < st.length; i++) t += st[i].min * tssPerMin(st[i]); return t; };
   const doneIn = () => Math.max(0, (S.elapsed - S.stepStart) / 60);
   const replan = (next, why) => { S.plan = next; if (S.step >= S.plan.length) S.step = S.plan.length; save(); render(); if (why) { note.hidden = false; note.textContent = why; } };
-  let suggestion = null;
-  const suggest = (text, yes, speak = true) => {
-    if (suggestion && suggestion.text === text) return;
-    suggestion = { text, yes };
+  // ── the app decides, you ride: every change it makes on its own is said, shown, and can be undone for 30 s ──────
+  let undo = null, undoTimer = 0;
+  const auto = (text, change) => {
+    const before = { plan: S.plan.map(x => ({ ...x })), intensity: S.intensity, step: S.step, stepStart: S.stepStart };
+    change();
+    undo = before;
     $("suggest-text").textContent = text; $("suggest").hidden = false;
-    if (speak) say(text, false);
-    beep(700, 120, 2);
+    say(text, false); beep(700, 120, 2); buzz([120, 60, 120]);
+    clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { $("suggest").hidden = true; undo = null; }, 30000);
+    save(); render();
   };
-  const unsuggest = () => { suggestion = null; $("suggest").hidden = true; };
-  $("suggest-yes").addEventListener("click", () => { const s = suggestion; unsuggest(); if (s) s.yes(); });
-  $("suggest-no").addEventListener("click", unsuggest);
-  const setIntensity = k => { S.intensity = Math.max(0.8, Math.min(1.15, Math.round(k * 100) / 100)); save(); render(); say(`Targets at ${Math.round(S.intensity * 100)} percent.`, false); };
-  $("w-easier").addEventListener("click", () => setIntensity(S.intensity - 0.05));
-  $("w-harder").addEventListener("click", () => setIntensity(S.intensity + 0.05));
-  $("w-more").addEventListener("click", () => { if (steps()[S.step]) replan(C.extend(steps(), S.step, 1, doneIn())); });
-  const easyHome = () => {   // the rest of the session as easy endurance, same time
+  $("suggest-yes").addEventListener("click", () => {
+    if (undo) { Object.assign(S, undo); undo = null; say("Changed back.", false); save(); render(); }
+    $("suggest").hidden = true;
+  });
+  $("suggest-no").addEventListener("click", () => { $("suggest").hidden = true; undo = null; });
+  const setIntensity = k => { S.intensity = Math.max(0.8, Math.min(1.15, Math.round(k * 100) / 100)); };
+  const easyHomeNow = () => {   // the rest of the session as easy endurance, same time
     const st = steps(), rest = Math.max(0, st[S.step] ? st[S.step].min - doneIn() : 0) + st.slice(S.step + 1).reduce((a, s) => a + s.min, 0);
-    replan([...st.slice(0, S.step), { name: "Easy (intervals skipped)", min: Math.max(1, doneIn() + rest), zone: "z2", lo: 0, hi: 89, cue: "Endurance only today" }], "Intervals skipped: the rest is easy endurance.");
+    S.plan = [...st.slice(0, S.step), { name: "Easy (intervals off)", min: Math.max(1, doneIn() + rest), zone: "z2", lo: 0, hi: 89, cue: "Endurance only today" }];
   };
   const kindSel = $("tl-kind");
   kindSel.innerHTML = Object.entries(C.QUICK).map(([k, q]) => `<option value="${k}">${esc(/** @type {any} */ (q).label)}</option>`).join("");
@@ -2593,7 +2786,6 @@ self.RideCore = (() => {
     /** @type {HTMLInputElement} */ ($("tl-left")).value = String(Math.max(5, left));
     const pr = projected(), goal = planned && planned.load ? Math.round(+planned.load) : null;
     $("tl-load").textContent = st.length ? `Load so far ${Math.round(tssNow())}${goal ? ` of ${goal} planned` : ""} · on pace for ${Math.round(pr ?? tssNow())} at the end of the session.` : `No session: pick a quick workout below, or ride free. Load so far ${Math.round(tssNow())}.`;
-    $("tl-hit").hidden = !(goal && pr != null && pr < goal * 0.95);
     $("tailor").showModal();
   });
   $("tailor").addEventListener("click", e => {
@@ -2616,18 +2808,8 @@ self.RideCore = (() => {
     else if (act === "rep") replan(C.addRep(st, Math.min(S.step, st.length - 1)), "One more rep added.");
     else if (act === "cut") replan(C.cutSet(st, Math.min(S.step, st.length - 1)), "Rest of the set cut.");
     else if (act === "fit") { const m = +(/** @type {HTMLInputElement} */ ($("tl-left")).value); if (m > 0 && st[S.step]) replan(C.fitTime(st, S.step, doneIn(), m), `The rest fits ${m} min.`); }
-    else if (act === "load") addLoad();
     $("tailor").close();
   });
-  /** Endurance added before the cool-down to reach the planned load. */
-  function addLoad() {
-    const goal = planned && planned.load ? +planned.load : 0, pr = projected() ?? tssNow();
-    if (!goal || pr >= goal) return;
-    const z2 = { name: "Endurance (to hit the load)", min: 0, zone: "z2", lo: 81, hi: 89, cue: "Steady, conversational" }, m = Math.min(90, Math.ceil((goal - pr) / tssPerMin(z2) / 5) * 5);
-    const st = steps(), cool = st.length - 1 > S.step && /cool/i.test(st[st.length - 1].name) ? st.length - 1 : st.length;
-    replan([...st.slice(0, cool), { ...z2, min: m }, ...st.slice(cool)], `${m} min of endurance added to reach ${Math.round(goal)} TSS.`);
-  }
-
   // ── the loop ────────────────────────────────────────────────────────────────────────────────────────────
   const k = cfg.sex === "female" ? [0.86, 1.67] : [0.64, 1.92];
   const trimpRate = hr => { const r = Math.max(0, Math.min(1, (hr - P.rest) / Math.max(1, P.max - P.rest))); return r * k[0] * Math.exp(k[1] * r); };
@@ -2642,8 +2824,9 @@ self.RideCore = (() => {
   function advance(manual) {
     const st = steps();
     if (!st.length) return;
-    endRep(st[S.step]);
+    const then = endRep(st[S.step]);
     S.step += 1; S.stepStart = S.elapsed; S.held = 0;
+    if (then) setTimeout(then, 0);   // what the app decided about the set, once the next step has begun
     if (P.stepLap && S.running) lap(1);
     if (S.step >= st.length) { say("Workout complete. Ride easy or finish up."); beep(660, 300, 2); offerLoad(); return; }
     const s = st[S.step], [lo, hi] = tgt(s), pt = pwTgt(s);
@@ -2651,40 +2834,32 @@ self.RideCore = (() => {
     say(`${s.name}. ${Math.round(s.min) >= 1 ? `${Math.round(s.min)} minute${Math.round(s.min) === 1 ? "" : "s"}` : `${Math.round(s.min * 60)} seconds`}. ${target}`);
     if (!manual) { beep(s.zone === "z1" || s.zone === "z2" ? 660 : 990, 220, 2); buzz([200, 100, 200]); }
   }
-  /** At the end of a work step: did HR reach the target, or run well over it? Two such reps in a row → a suggestion. */
+  /** At the end of a work step: did HR reach the target, or run well over it? Two such reps in a row and the app acts. */
   function endRep(s) {
-    if (!s || !C.isWork(s) || s.min < 3 || rep.n < 30) { rep = { under: 0, high: 0, n: 0 }; return; }
+    if (!s || !C.isWork(s) || s.min < 3 || rep.n < 30) { rep = { under: 0, high: 0, n: 0 }; return null; }
     const under = rep.under / rep.n > 0.6, high = rep.high / rep.n > 0.5;
     S.missed = under ? S.missed + 1 : 0; S.hot = high ? S.hot + 1 : 0;
     rep = { under: 0, high: 0, n: 0 };
     const set = C.setOf(steps(), S.step), more = set && set.last > S.step;
-    if (S.missed >= 2 && more) { S.missed = 0; suggest("Heart rate isn't reaching the target on these reps: fatigue shows. Cut the rest of the set?", () => replan(C.cutSet(steps(), S.step), "Rest of the set cut.")); }
-    else if (S.hot >= 2 && more) { S.hot = 0; suggest("You're running well over the target. Make the rest 5% easier?", () => setIntensity(S.intensity - 0.05)); }
+    if (S.missed >= 2 && more) { S.missed = 0; return () => auto("Heart rate isn't reaching the target on these reps: that's fatigue, so the rest of the set is cut.", () => { S.plan = C.cutSet(steps(), S.step); }); }
+    else if (S.hot >= 2 && more) { S.hot = 0; return () => auto("Heart rate is running well over the target: the rest of the set is 5% easier.", () => setIntensity(S.intensity - 0.05)); }
+    return null;
   }
   function offerLoad() {
     const goal = planned && planned.load ? +planned.load : 0;
     if (!goal || S.loadOffered || tssNow() >= goal * 0.9) return;
     S.loadOffered = true;
-    suggest(`Load ${Math.round(tssNow())} of ${Math.round(goal)} planned. Add endurance to hit it?`, () => { S.step = steps().length; addLoad(); });
+    const m = Math.min(90, Math.ceil((goal - tssNow()) / tssPerMin({ lo: 81, hi: 89 }) / 5) * 5);
+    auto(`Load ${Math.round(tssNow())} of ${Math.round(goal)} planned: ${m} more minutes of easy endurance finish the day's work.`, () => {
+      S.plan = [...steps(), { name: "Endurance (the day's load)", min: m, zone: "z2", lo: 81, hi: 89, cue: "Steady, conversational" }]; S.stepStart = S.elapsed;
+    });
   }
-  // ── commute check: same route every time, so HR at a given speed is a daily fitness reading ─────────────
-  // After 8 minutes, the last 5 minutes' average HR is compared with what this leg usually costs at that speed
-  // (a line fitted to your past commutes). 6+ bpm high: fatigue, illness or heat, so skip the intervals.
-  const hrSpeed = [];
-  let check = null, checkSaid = "";
-  function commuteCheck() {
-    const model = planned && planned.check && cfg.commute && cfg.commute[planned.leg];
-    if (!model || S.elapsed < 480) return null;
-    const recent = hrSpeed.filter(x => x.t > S.elapsed - 300);
-    if (recent.length < 120) return null;
-    const hr = recent.reduce((a, x) => a + x.hr, 0) / recent.length, kmh = recent.reduce((a, x) => a + x.kmh, 0) / recent.length;
-    let usual = null;
-    if (Array.isArray(model.model)) usual = model.model[0] + model.model[1] * kmh;
-    else if (model.hr && Math.abs(kmh - model.speed) < 1.5) usual = model.hr;
-    if (usual == null) return null;
-    const diff = hr - usual;
-    return { diff, kmh, verdict: diff >= 6 ? "hot" : diff <= -4 ? "fresh" : "normal" };
-  }
+  // ── commute check (RideCore.commuteCheck): steady riding only, so lights and traffic don't read as fatigue ─────
+  const hrSpeed = [], stops = [];
+  let check = null, checkSaid = "", hotFrom = 0, lastSpd = [], moving = false, rollAt = 0;
+  const commuteModel = () => planned && planned.check && cfg.commute && cfg.commute[planned.leg];
+  /** Rolling again after a stop: for 45 s heart rate is still catching up (or coming down), so nothing is judged. */
+  const rolling = () => !!rollAt && S.elapsed - rollAt < 45;
 
   function tick() {
     const now = Date.now(), dt = last ? Math.min(5, (now - last) / 1000) : 1;
@@ -2708,21 +2883,38 @@ self.RideCore = (() => {
         }
         if (live.cad && now - live.cadAt < 4000 && live.cad > 0) { S.cadSum += live.cad * dt; S.cadSecs += dt; }
         if (now - live.powerAt < 4000 && live.power != null) { S.pwSum += live.power * dt; S.pwSecs += dt; }
+        // stops and starts: a stop is under 1.5 m/s after moving; rolling again opens a 45 s grace for the coaching
+        if (spd != null) {
+          if (moving && spd < 1.5) { moving = false; stops.push(S.elapsed); }
+          else if (!moving && spd > 3) { moving = true; rollAt = stops.length ? S.elapsed : 0; }
+          lastSpd.push(spd); if (lastSpd.length > 15) lastSpd.shift();
+        }
         if (live.hr && now - live.hrAt < 5000 && spd != null && spd > 3) {
-          hrSpeed.push({ t: S.elapsed, hr: live.hr, kmh: spd * 3.6 });
+          const even = lastSpd.length >= 10 && Math.max(...lastSpd) - Math.min(...lastSpd) < 2.5;
+          const sinceStop = stops.length ? S.elapsed - stops[stops.length - 1] : Infinity;
+          hrSpeed.push({ t: S.elapsed, hr: live.hr, kmh: spd * 3.6, steady: spd > 4.2 && even && sinceStop > 60 && !rolling() });
           if (hrSpeed.length > 900) hrSpeed.shift();
         }
         record(now);
-        check = commuteCheck();
-        if (check && check.verdict !== "normal" && checkSaid !== check.verdict) {
-          checkSaid = check.verdict;
-          if (check.verdict === "hot") { buzz([300, 120, 300]); suggest("Heart rate is running high for this speed. Keep it easy today: skip the intervals?", easyHome); }
-          else say("You're running fresh today: lower heart rate than usual for this speed.");
+        // a hot verdict must hold 2 minutes of steady riding before the app acts on it; stop-and-go gets no verdict
+        check = C.commuteCheck(hrSpeed, commuteModel(), stops, S.elapsed);
+        if (check && check.verdict === "hot") { if (!hotFrom) hotFrom = S.elapsed; } else hotFrom = 0;
+        const verdict = check ? (check.verdict === "hot" && S.elapsed - hotFrom < 120 ? "" : check.verdict) : "";
+        if (verdict && verdict !== "normal" && verdict !== "city" && checkSaid !== verdict) {
+          checkSaid = verdict;
+          if (verdict === "hot" && steps().slice(S.step).some(C.isWork)) auto(`Heart rate is ${Math.round(check.diff)} beats above your usual for this speed on steady riding: the intervals are off today, the rest is easy.`, easyHomeNow);
+          else if (verdict === "hot") say("Heart rate is running high for this speed: keep it easy.", false);
+          else say("You're running fresh today: lower heart rate than usual for this speed.", false);
         }
         const st = steps();
         if (st.length && S.step < st.length) {
           const s = st[S.step], inStep = S.elapsed - S.stepStart, left = s.min * 60 - inStep, hrLive = live.hr && now - live.hrAt < 5000 ? live.hr : null;
-          if (C.isWork(s) && hrLive && inStep > s.min * 60 * 0.5) { const [lo, hi] = tgt(s); rep.n++; if (hrLive < lo - 3) rep.under++; if (hrLive > hi + 5) rep.high++; }
+          if (C.isWork(s) && hrLive && inStep > s.min * 60 * 0.5 && !rolling()) { const [lo, hi] = tgt(s); rep.n++; if (hrLive < lo - 3) rep.under++; if (hrLive > hi + 5) rep.high++; }
+          if (hrLive && !rolling() && inStep > 45) {   // time on target, for the after-ride note (HR gets 45 s to arrive)
+            const [lo, hi] = tgt(s), on = hrLive >= lo - 2 && hrLive <= hi + 2;
+            S.tgtSecs += dt; if (on) S.tgtOn += dt;
+            if (C.isWork(s)) { S.workSecs += dt; if (on) S.workOn += dt; }
+          }
           // efforts on the climbs: an easy step before a work step waits (up to 10 min) for the foot of the next climb
           const nxt = st[S.step + 1], ns = NAV.st;
           const holding = P.climbs && NAV.route && ns && !ns.offCourse && !C.isWork(s) && C.isWork(nxt) && left <= 0 && S.held < 600 && ns.toClimb != null && ns.toClimb > Math.max(15, (spd || 4) * 4) && ns.toClimb / Math.max(3, spd || 3) < 600 - S.held;
@@ -2744,12 +2936,55 @@ self.RideCore = (() => {
     render();
   }
 
+  /** The target gauge: the step's range as a band in its zone's color, heart rate as the marker, 20 bpm either side. */
+  function paintGauge(s, hr = null, lo = 0, hi = 0) {
+    const g = $("gauge");
+    g.hidden = !s;
+    if (!s) return;
+    const a = (lo > 0 ? lo : hi - 30) - 20, b = hi + 20, pos = x => `${Math.max(0, Math.min(100, (x - a) / (b - a) * 100))}%`;
+    const band = $("g-band"), mark = $("g-mark");
+    band.style.left = pos(lo > 0 ? lo : a); band.style.right = `calc(100% - ${pos(hi)})`;
+    band.dataset.zone = String(zoneOf(bpm((s.lo > 0 ? (s.lo + s.hi) / 2 : s.hi - 5))));
+    mark.hidden = hr == null;
+    if (hr != null) mark.style.left = pos(hr);
+  }
+
+  /** What the sync learned, in a line each: what moved readiness, fitness and form against the next event's target,
+   *  the commute's speed per heartbeat over time, and where the zones came from. */
+  function briefLines(B) {
+    const out = [...(B.why || [])];
+    const T = B.target, raceName = cfg.race && cfg.race.name ? cfg.race.name.replace(/^Bell's\s+/, "") : "the race";
+    if (B.ctl != null) out.push(`Fitness ${B.ctl.toFixed(0)}${B.tsb != null ? `, form ${B.tsb > 0 ? "+" : ""}${B.tsb}` : ""}${T ? ` · ${raceName} asks for ${T.ctl}${T.race_ctl != null ? `, on course for ${Math.round(T.race_ctl)}` : ""}` : ""}`);
+    else if (B.tsb != null) out.push(`Form ${B.tsb > 0 ? "+" : ""}${B.tsb}`);
+    if (B.ef_trend != null && Math.abs(B.ef_trend) >= 0.5) out.push(`Commute: ${B.ef_trend > 0 ? "+" : "−"}${Math.abs(B.ef_trend).toFixed(1)}% speed per heartbeat vs your earlier commutes${B.ef_trend > 0 ? " (fitter)" : ""}`);
+    if (B.zones) out.push(B.zones);
+    return out;
+  }
+
+  /** Before the ride: why today's ride is today's ride (the sync's call, readiness and what moved it, the next event). */
+  function paintBrief() {
+    const B = cfg.brief, box = $("brief");
+    box.hidden = !B || B.date !== iso(today) || S.running;
+    if (box.hidden) return;
+    const sc = $("b-score");
+    sc.textContent = B.score != null ? String(B.score) : "—"; sc.dataset.level = B.level || "";
+    sc.setAttribute("aria-label", B.score != null ? `Readiness ${B.score}` : "No readiness yet");
+    $("b-title").textContent = B.title || "";
+    $("b-why").replaceChildren(...briefLines(B).map(t => { const li = document.createElement("li"); li.textContent = String(t); return li; }));
+    const race = cfg.race && cfg.race.date ? Math.round((new Date(cfg.race.date + "T12:00:00") - new Date(iso(today) + "T12:00:00")) / 864e5) : null;
+    $("b-race").textContent = race != null && race >= 0 ? ` · ${cfg.race.name} in ${race} day${race === 1 ? "" : "s"}` : "";
+  }
+
   // ── drawing ─────────────────────────────────────────────────────────────────────────────────────────────
   function render() {
     const now = Date.now();
     const hrLive = live.hr && now - live.hrAt < 5000 ? live.hr : null;
     $("hr").textContent = hrLive ?? "—";
+    $("hr").classList.toggle("idle", !hrLive);
+    $("hrcard").hidden = !S.running && !hrLive && !live.hrAt;   // before the ride, no strap: the brief has the room
+    if (hrLive) $("hr-zone").dataset.n = String(zoneOf(hrLive)); else delete $("hr-zone").dataset.n;
     const zm = $("zmark");
+    $("hrcard").dataset.zone = hrLive ? String(zoneOf(hrLive)) : "";
     if (hrLive) { zm.style.display = "block"; zm.style.left = `${Math.max(0, Math.min(100, (hrLive / P.lthr * 100 - 60) / 52 * 100))}%`; $("hr-zone").textContent = ZNAME[zoneOf(hrLive)]; }
     else { zm.style.display = "none"; $("hr-zone").textContent = live.hrAt ? "signal lost" : "bpm"; }
 
@@ -2766,15 +3001,14 @@ self.RideCore = (() => {
       $("step-target").innerHTML = `${lo > 0 ? `Target <b>${lo}–${hi}</b> bpm` : `Target <b>under ${hi}</b> bpm`}${pt ? ` · <b>${pt[0] ? `${pt[0]}–${pt[1]}` : `&lt;${pt[1]}`}</b> W` : ""}`;
       $("step-bar").style.width = `${Math.min(100, elapsedInStep / (s.min * 60) * 100)}%`;
       const ns = NAV.st;
-      $("step-cue").textContent = S.held && ns && ns.toClimb != null ? `Holding for the climb: the effort starts at its foot, ${nearTxt(ns.toClimb)} ahead.`
-        : check ? `HR vs usual at ${speedTxt(check.kmh / 3.6)} ${unitS()}: ${check.diff >= 0 ? "+" : "−"}${Math.abs(Math.round(check.diff))} bpm · ${check.verdict === "hot" ? "running hot: keep it easy, skip the intervals" : check.verdict === "fresh" ? "fresh: a good day for the work" : "normal"}`
-          : nb(s.cue);
-      $("step-cue").classList.toggle("hot", !!check && check.verdict === "hot");
+      $("step-cue").textContent = S.held && ns && ns.toClimb != null ? `Holding for the climb: the effort starts at its foot, ${nearTxt(ns.toClimb)} ahead.` : nb(s.cue);
+      paintGauge(s, hrLive, lo, hi);
       const n = list[S.step + 1];
       $("step-next").textContent = n ? `Next: ${n.name} · ${n.min >= 1 ? `${Math.round(n.min)} min` : `${Math.round(n.min * 60)} s`}` : "Last step";
       const byFeel = s.cue && s.cue.includes("by feel");
       const usePower = pt && p10 != null && C.isWork(s);
       if (S.autoPaused) { st.classList.add("feel"); st.textContent = "Auto-paused"; }
+      else if (rolling() && !usePower) { st.classList.add("feel"); st.textContent = "Rolling again"; }   // after a stop: HR catches up, nothing to chase
       else if (usePower && elapsedInStep >= 5) {   // power has no lag: short efforts get a number too
         if (p10 < pt[0] - 5) { st.classList.add("up"); st.textContent = `▲ Push · ${p10} W`; }
         else if (p10 > pt[1] + 5) { st.classList.add("down"); st.textContent = `▼ Ease · ${p10} W`; }
@@ -2789,17 +3023,17 @@ self.RideCore = (() => {
       $("step-name").textContent = planned ? planned.title : "Free ride";
       $("step-time").textContent = clock(list.reduce((a, x) => a + x.min * 60, 0));
       $("step-target").innerHTML = `${list.length} step${list.length === 1 ? "" : "s"} · first: <b>${esc(s.name)}</b>`;
-      $("step-cue").textContent = planned ? nb(planned.session) : "";
+      $("step-cue").textContent = planned ? nb(planned.eased ? `${planned.eased}: ${planned.title.toLowerCase()} instead of the planned session.` : planned.session) : "";
       $("step-next").textContent = "";
       $("step-bar").style.width = "0";
+      paintGauge(null);
     } else {
+      paintGauge(null);
       $("step-name").textContent = S.step >= list.length && list.length ? "Workout done" : planned ? planned.title : "Free ride";
       $("step-time").textContent = clock(S.elapsed);
       $("step-target").textContent = list.length ? "Ride easy home" : NAV.route ? `${NAV.route.name}: follow the route` : "No steps — just ride";
       $("step-cue").textContent = ""; $("step-next").textContent = ""; $("step-bar").style.width = "0";
     }
-    $("w-int").textContent = `${Math.round(S.intensity * 100)}%`;
-    for (const id of ["w-easier", "w-harder", "w-more"]) /** @type {HTMLButtonElement} */ ($(id)).disabled = !list.length || S.step >= list.length;
 
     $("t-time").textContent = clock(S.elapsed);
     $("t-dist").innerHTML = `${distTxt(S.dist)}<small>${unitD()}</small>`;
@@ -2814,6 +3048,9 @@ self.RideCore = (() => {
     $("fuel").hidden = !S.fuelDue;
     if (S.fuelDue) $("fuel-text").textContent = fuelText();
 
+    $("sb-clock").textContent = hhmm(now);
+    paintBrief();
+    $("sb-batt").textContent = live.battery ? `${Math.round(live.battery.level * 100)}%` : "";
     const page = curPage();
     if (page === "data") paintData(now, spd);
     if (page === "laps") { $("lap-no").textContent = String(S.laps.length + 1); $("lap-time").textContent = clock(S.elapsed - S.lapElapsed); $("lap-sub").textContent = `${distTxt(S.dist - S.lapDist)} ${unitD()}`; }
@@ -2845,9 +3082,14 @@ self.RideCore = (() => {
     const p10 = pw10();
     $("d-pw").innerHTML = p10 != null ? `${p10}<small>W 10s</small>` : S.pwSecs ? `${Math.round(S.pwSum / S.pwSecs)}<small>W avg</small>` : "—";
     $("d-cad").innerHTML = live.cad != null && now - live.cadAt < 4000 ? `${live.cad}<small>rpm</small>` : "—";
-    $("d-clock").textContent = hhmm(now);
+    const ampm = t => { const x = hhmm(t), m = x.match(/^(.*?)\s*([AaPp]\.?[Mm]\.?)$/); return m ? `${esc(m[1])}<small>${esc(m[2])}</small>` : esc(x); };
+    $("d-clock").innerHTML = ampm(now);
     const p = live.lastFix || (NAV.route && NAV.route.pts[0]);
-    if (p) { const sun = C.sunTimes(new Date(), p.lat, p.lon), left = (sun.sunset - now) / 60000; $("d-sunset").textContent = left > 0 ? `${hhmm(sun.sunset)} · ${left >= 60 ? `${Math.floor(left / 60)}h ${Math.round(left % 60)}m` : `${Math.round(left)} min`}` : hhmm(sun.sunset); }
+    if (p) {
+      const sun = C.sunTimes(new Date(), p.lat, p.lon), left = (sun.sunset - now) / 60000;
+      $("d-sunset").innerHTML = left > 0 ? (left >= 60 ? `${Math.floor(left / 60)}<small>h</small> ${Math.round(left % 60)}<small>m</small>` : `${Math.round(left)}<small>min</small>`) : "Dark";
+      $("d-sunset-at").textContent = `sunset ${hhmm(sun.sunset)}`;
+    }
     const e = NAV.route && NAV.st && !NAV.st.offCourse && NAV.route.hasEle ? NAV.st.ele : live.alt;
     $("d-ele").innerHTML = e == null ? "—" : `${eleTxt(e)}<small>${unitE()}</small>`;
     $("d-batt").textContent = live.battery ? `${Math.round(live.battery.level * 100)}%${live.battery.charging ? " ⚡" : ""}` : "—";
@@ -2896,9 +3138,9 @@ self.RideCore = (() => {
     if (!S.running) {
       const plan = S.plan, quick = S.quick, intensity = S.intensity;
       Object.assign(S, fresh(), { running: true, plan, quick, intensity, rideId: uid(), wallStart: now, lapStart: now });
-      samples = []; hrSpeed.length = 0; check = null; checkSaid = ""; rep = { under: 0, high: 0, n: 0 };
+      samples = []; hrSpeed.length = 0; stops.length = 0; check = null; checkSaid = ""; hotFrom = 0; rollAt = 0; moving = false; rep = { under: 0, high: 0, n: 0 };
       const st = steps();
-      if (st.length) { const s = st[0]; say(`${planned ? planned.title : "Workout"}. First, ${s.name}, ${Math.round(s.min)} minutes.`); }
+      if (st.length) { const s = st[0]; say(`${planned && planned.eased ? `${planned.eased}. ` : ""}${planned ? planned.title : "Workout"}. First, ${s.name}, ${Math.round(s.min)} minutes.`); }
       else if (NAV.route) say(`${NAV.route.name}. ${nearSay(NAV.route.total)}${NAV.route.hasEle ? `, ${eleTxt(NAV.route.gain)} ${P.km ? "metres" : "feet"} of climbing` : ""}.`);
       if (NAV.nav) NAV.nav.seek(0);
       beep(880, 200, 2);
@@ -2932,12 +3174,30 @@ self.RideCore = (() => {
 
   // ── saved rides: summary, laps and exports ───────────────────────────────────────────────────────────────
   const slug = s => String(s || "ride").replace(/[^\w\d-]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "ride";
+  /** What this ride did, in a few lines: the work against the target, the training effect on fitness and form, the
+   *  next event, and the commute check. */
+  function rideNote(tss) {
+    const B = cfg.brief && cfg.brief.date === iso(new Date(S.wallStart || Date.now())) ? cfg.brief : null, out = [];
+    if (S.workSecs >= 120) out.push(`Work on target ${Math.round(S.workOn / 60)} of ${Math.round(S.workSecs / 60)} min (${Math.round(S.workOn / S.workSecs * 100)}%)${S.workOn / S.workSecs >= 0.7 ? ": the session did its job" : S.workOn / S.workSecs >= 0.4 ? ": most of what it asked" : ": heart rate rarely got there — a sign to rest more before the next hard day"}.`);
+    else if (S.tgtSecs >= 300) out.push(`Heart rate on target ${Math.round(S.tgtOn / S.tgtSecs * 100)}% of the time${S.tgtOn / S.tgtSecs >= 0.7 ? ", easy where easy was asked: that's the aerobic work that builds the base" : ""}.`);
+    const zt = S.zones.reduce((a, b) => a + b, 0);
+    if (zt >= 300) out.push(`Zones: ${Math.round((S.zones[0] + S.zones[1]) / zt * 100)}% in Z1–Z2, ${Math.round((S.zones[3] + S.zones[4]) / zt * 100)}% at Z4–Z5.`);
+    if (B && B.ctl != null && B.atl != null) {
+      const ctl = B.ctl + (tss - B.ctl) / 42, atl = B.atl + (tss - B.atl) / 7;
+      out.push(`Load ${tss}${planned && planned.load ? ` of ${Math.round(+planned.load)} planned` : ""}: fitness ${B.ctl.toFixed(1)} → ${ctl.toFixed(1)}, form tomorrow about ${Math.round(ctl - atl) > 0 ? "+" : ""}${Math.round(ctl - atl)}.`);
+      const T = B.target, raceName = cfg.race && cfg.race.name ? cfg.race.name.replace(/^Bell's\s+/, "") : "the race";
+      if (T && T.days != null) out.push(T.ctl - ctl > 1 ? `${raceName} in ${T.days} days asks for fitness ${T.ctl}: ${(T.ctl - ctl).toFixed(1)} to go, and the plan's coming weeks are built for it.` : `${raceName} in ${T.days} days: fitness is at its target ${T.ctl}, so the job now is arriving fresh.`);
+    } else out.push(`Load ${tss}${planned && planned.load ? ` of ${Math.round(+planned.load)} planned` : ""}.`);
+    if (checkSaid === "hot") out.push("The commute check ran hot on steady riding: worth an easy day and an early night.");
+    else if (checkSaid === "fresh") out.push("The commute check ran fresh: lower heart rate than usual for the speed.");
+    return out;
+  }
   async function saveRide(now) {
     const tss = Math.round(tssNow());
     const name = `${planned ? planned.title : NAV.route ? NAV.route.name : "Ride"} · ${new Date(S.wallStart || now).toLocaleDateString([], { month: "short", day: "numeric" })}`;
     const meta = { id: S.rideId || uid(), name, start: S.wallStart || now - S.elapsed * 1000, end: now, elapsed: S.elapsed, moving: S.moving, dist: S.dist, ascent: S.ascent, maxSpeed: S.maxSpeed,
       avgHr: S.hrSecs ? S.hrSum / S.hrSecs : null, maxHr: S.hrMax || null, avgCad: S.cadSecs ? S.cadSum / S.cadSecs : null, avgPower: S.pwSecs ? S.pwSum / S.pwSecs : null, tss, planned: planned && planned.load ? Math.round(+planned.load) : null,
-      zones: S.zones, laps: S.laps, pauses: S.pauses, route: NAV.route ? NAV.route.name : null, check, indoor: !samples.some(s => s[1] != null) };
+      zones: S.zones, laps: S.laps, pauses: S.pauses, route: NAV.route ? NAV.route.name : null, check, indoor: !samples.some(s => s[1] != null), note: rideNote(tss) };
     try {
       await DB.put("tracks", { id: meta.id, samples });
       await DB.put("rides", meta);
@@ -2965,7 +3225,8 @@ self.RideCore = (() => {
     const bar = node("div", "zbar sumbar", node("span"), node("span"), node("span"), node("span"), node("span"));
     bar.style.gridTemplateColumns = zones.map(z => `${Math.max(0.5, z / zt * 100)}fr`).join(" ");
     const v = r.check && ["hot", "fresh", "normal"].includes(r.check.verdict) ? r.check : null;
-    $("sum-body").replaceChildren(...[grid, bar,
+    const did = Array.isArray(r.note) && r.note.length ? node("div", "did", node("h3", "k", "What this ride did"), node("ul", "", ...r.note.slice(0, 6).map(t => node("li", "", String(t))))) : null;
+    $("sum-body").replaceChildren(...[did, grid, bar,
       node("p", "note mt-2", zones.map((z, i) => `Z${i + 1} ${clock(z)}`).join(" · ")),
       laps.length > 1 ? node("p", "note", `${laps.length} laps · ${laps.slice(0, 12).map((l, i) => `${i + 1}: ${clock(n(l.time))}`).join(" · ")}${laps.length > 12 ? " …" : ""}`) : null,
       v ? node("p", "note", `Commute check: HR ${n(v.diff) >= 0 ? "+" : "−"}${Math.abs(Math.round(n(v.diff)))} bpm against your usual for the speed (${v.verdict}).`) : null,
@@ -3043,8 +3304,8 @@ self.RideCore = (() => {
 
   // light / dark: light (paper) unless chosen otherwise; shared with the dashboard. Applies the moment it's tapped.
   const themeBtns = [...document.querySelectorAll("[data-theme-pick]")];
-  const paintTheme = () => themeBtns.forEach(b => b.setAttribute("aria-pressed", String(/** @type {HTMLElement} */ (b).dataset.themePick === (document.documentElement.dataset.theme || "light"))));
-  themeBtns.forEach(b => b.addEventListener("click", () => { document.documentElement.dataset.theme = /** @type {HTMLElement} */ (b).dataset.themePick; ls.set("fitness-theme", /** @type {HTMLElement} */ (b).dataset.themePick); paintTheme(); drawCrumb(); renderAhead(true); }));
+  const paintTheme = () => themeBtns.forEach(b => b.setAttribute("aria-pressed", String(/** @type {HTMLElement} */ (b).dataset.themePick === (document.documentElement.dataset.theme || "dark"))));
+  themeBtns.forEach(b => b.addEventListener("click", () => { document.documentElement.dataset.theme = /** @type {HTMLElement} */ (b).dataset.themePick; ls.set("fitness-theme", /** @type {HTMLElement} */ (b).dataset.themePick); paintTheme(); drawCrumb(); renderAhead(true); restyleMap(); }));
   paintTheme();
 
   // installed-app offline: the same service worker as the dashboard (scope: this folder)
@@ -3059,7 +3320,7 @@ self.RideCore = (() => {
   setInterval(tick, 1000);
   show(page);
   paintLaps();
-  /** @type {any} */ (window).__ride = { S, NAV, P, MAP, onFix: f => { live.lastFix = f; onFix(f); }, importFiles, useRoute, live, samples: () => samples, DB };
+  /** @type {any} */ (window).__ride = { S, NAV, P, MAP, get rep() { return rep; }, onFix: f => { live.lastFix = f; onFix(f); }, importFiles, useRoute, live, samples: () => samples, DB };
 })();
 </script>
 </body>

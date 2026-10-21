@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-HHlV6d4ceRZLZtO6FPYY+TJFiyifdgrLEowu3iP3W2k=' 'sha256-9c0HtHyRK5al0rxBqGOWnhxorl5q1Nl4YXJnnVSl7dU=' 'sha256-lHp05xv0Q7hg0UIqkTd8EyVTJE+OWZZhcrc4VKI+x5w='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-OiLRWesQWiCuv+t2MEAjJvTTieEoZ1tCThRJLK5Yntc=' 'sha256-mpkR7NxpyXLUi7F1jCi60k7cHrJVIfD0a5Q6GzFzoHg=' 'sha256-lHp05xv0Q7hg0UIqkTd8EyVTJE+OWZZhcrc4VKI+x5w='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
   <meta name="color-scheme" content="light dark">
   <title>Training &amp; Recovery</title>
-  <meta name="theme-color" content="#111111">
+  <meta name="theme-color" content="#000000">
   <meta name="application-name" content="Training">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -16,7 +16,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>try { const t = localStorage.getItem("fitness-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+  <script>try { document.documentElement.dataset.theme = localStorage.getItem("fitness-theme") || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }</script>
   <style>/* Training & Recovery — set in the International Typographic Style, c. 1978: Helvetica flush left and ragged right
    on a strict grid; black bands and heavy rules instead of boxes and shadows; square corners; uncoated-paper white;
    Swiss red as the one accent; ordered scales as halftone tints of black, like a two-colour print job. The chart
@@ -263,7 +263,7 @@ details.table .scroll { max-height: 264px; overflow: auto; margin-top: var(--sp-
 .phase { display: inline-flex; align-items: center; min-height: 18px; padding: 0 5px; border: 1px solid var(--ink); color: var(--ink); white-space: nowrap; }
 .phase.taper { border-color: var(--s2); color: var(--s2); }
 .phase.openers { border-color: var(--accent-ink); color: var(--accent-ink); }
-.phase.race { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+.phase.race { background: #b8281a; border-color: #b8281a; color: #ffffff; }   /* the darker red: white type at AA in both themes */
 .phase.indoor { background: var(--ink); color: var(--page); }
 .phase.recovery, .phase.transition { border-color: var(--hair); color: var(--ink-2); }
 .phase.commute { border-color: var(--s2); color: var(--s2); }
@@ -540,9 +540,9 @@ footer p { max-width: 64ch; }
     deferred = null; installBtn.hidden = true;
   });
 
-  // ── theme: follows the device until a button is pressed, then that choice sticks (shared with ride mode) ──
+  // ── theme: dark unless light is chosen; the choice sticks and is shared with ride mode ──
   const themeBtns = [...document.querySelectorAll("[data-theme-pick]")], deviceDark = matchMedia("(prefers-color-scheme: dark)");
-  const effective = () => document.documentElement.dataset.theme || (deviceDark.matches ? "dark" : "light");
+  const effective = () => document.documentElement.dataset.theme || "dark";
   const paintTheme = () => themeBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themePick === effective())));
   for (const b of themeBtns) b.addEventListener("click", () => { document.documentElement.dataset.theme = b.dataset.themePick; ls.set("fitness-theme", b.dataset.themePick); paintTheme(); });
   deviceDark.addEventListener("change", paintTheme);
