@@ -3,17 +3,17 @@
  *  - Pages (the dashboard and ride mode): network first with a short timeout, then the cached copy, so a fresh build
  *    shows up when there's signal and the last one opens when there isn't. Keyed by path, never by query or #hash
  *    (the #hash is where a phone link carries its data; it never reaches here or the server).
- *  - Manifest, icons and the map library: cache first, refreshed in the background.
+ *  - Manifest, icons, fonts and the map library: cache first, refreshed in the background.
  *  - Map tiles, fonts and sprites (OpenFreeMap): cache first in their own cache, which outlives app updates, so a
  *    route's map saved at home is there in the woods. The style and tile index: network first, then the saved copy.
  *  - A GPX shared to the app from another app (Android's share sheet posts it here): kept in an inbox cache, and
  *    ride mode opens to import it.
  *  - The cache name carries a hash of the app files, filled in at build time; an old cache is dropped on activate.
  *  - The dashboard's data lives in the page's own storage on this device, not in this cache. */
-const CACHE = "fitness-b061dbddbf";
+const CACHE = "fitness-5ab4617061";
 const TILES = "fitness-tiles", INBOX = "fitness-inbox";
 const SHELL = ["./", "./index.html", "./ride.html", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png",
-  "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
+  "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png", "./fonts/nimbus-sans-l-400.woff2", "./fonts/nimbus-sans-l-700.woff2"];
 const LATER = ["./vendor/maplibre-gl.mjs", "./vendor/maplibre-gl-worker.mjs", "./vendor/maplibre-gl.css"];   // the map: cached at install, not required for it
 const MAP_HOST = "tiles.openfreemap.org";
 

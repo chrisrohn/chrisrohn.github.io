@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-H2lVGdondPQBE7PF/i1YoJNIyskDe3ME6XBWu7fU2II=' 'sha256-V3b4HJU6F14yni878iud+6KisuFFdi4LKXY9nnnREio=' 'sha256-RGcFVb+MqBn+P3i1h53n2NrpBdTIobjZD84gS19bqHs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de https://overpass-api.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-U9Zm50Jub5dBOW6zr55xoJPu2gMo1ZH5u2jUEGCjFXM=' 'sha256-q8PjUTYH93lAf9vqH726DxqlStOFkXop3B6LJ5dt5jM=' 'sha256-gfEjLHPIHpTn4D66NdR+AQmCLMyhYZFY2gAKUNyyl3w='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de https://overpass-api.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <meta name="color-scheme" content="light dark">
@@ -16,7 +16,33 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>try { const t = localStorage.getItem("fitness-theme"); document.documentElement.dataset.theme = t || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }</script>
+  <script>"use strict";
+// Shared by the dashboard (shell.js) and ride mode (ride.js), inlined first in each page's <head>:
+//   theme  the one light / dark rule: battery saver's black, else the choice made here, else ("auto") the phone's;
+//          applied at once, before anything paints, so a dark page never flashes white
+//   ask    the themed confirm sheet (#ask in each page), resolved true for its yes button
+self.FitnessUI = (() => {
+  const deviceDark = matchMedia("(prefers-color-scheme: dark)");
+  /** The stored choice: "light", "dark" or "auto" (dark when nothing's chosen yet). */
+  const pref = () => { try { return localStorage.getItem("fitness-theme") || "dark"; } catch { return "dark"; } };
+  /** The theme to show now. @param {boolean} [saver] battery saver on: always black */
+  const theme = (saver = false) => { if (saver) return "dark"; const t = pref(); return t === "auto" ? (deviceDark.matches ? "dark" : "light") : t; };
+  /** @param {boolean} [saver] */
+  const apply = (saver = false) => { document.documentElement.dataset.theme = theme(saver); };
+  apply();
+  /** @param {string} title @param {string} text @param {string} yes @param {{danger?: boolean}} [opt] @returns {Promise<boolean>} */
+  function ask(title, text, yes, { danger = false } = {}) {
+    const $ = id => /** @type {HTMLElement} */ (document.getElementById(id));
+    const d = /** @type {HTMLDialogElement | null} */ (document.getElementById("ask"));
+    if (!d || typeof d.showModal !== "function") return Promise.resolve(confirm(`${title} ${text}`.trim()));
+    $("ask-h").textContent = title; $("ask-p").textContent = text; $("ask-p").hidden = !text;
+    const y = $("ask-yes"); y.textContent = yes; y.classList.toggle("danger", danger); y.classList.toggle("primary", !danger);
+    d.returnValue = "";
+    return new Promise(res => { d.addEventListener("close", () => res(d.returnValue === "yes"), { once: true }); d.showModal(); $("ask-no").focus(); });
+  }
+  return { deviceDark, pref, theme, apply, ask };
+})();
+</script>
   <style>/* Training & Recovery — set in the International Typographic Style, c. 1978: Helvetica flush left and ragged right
    on a strict grid; black bands and heavy rules instead of boxes and shadows; square corners; uncoated-paper white;
    Swiss red as the one accent; ordered scales as halftone tints of black, like a two-colour print job. The chart
@@ -27,6 +53,16 @@
               two weights (400, 700); labels are uppercase 700 tracked +.08em; big type is tracked tighter as it grows
      space    4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 (an 8-point grid with a 4-point half step)
      rules    6 between sections · 2 inside them · 1 between rows */
+/* Helvetica everywhere: Apple devices have Helvetica Neue; everything else (Android, where "Helvetica" is only an alias
+   for Roboto, and Windows, where it is Arial) gets URW's Nimbus Sans L, the Helvetica clone, from fonts/ (19 KB a
+   weight; GPL, source and license in fitness/fonts/). Its vertical metrics are set so capitals sit centred in the
+   line box, as Helvetica Neue's do: otherwise every uppercase label would ride 0.13 em high in its button. */
+@font-face { font-family: "Nimbus Sans L App"; font-style: normal; font-weight: 400; font-display: swap;
+  src: local("Nimbus Sans L"), local("NimbusSanL-Reg"), url("fonts/nimbus-sans-l-400.woff2") format("woff2");
+  ascent-override: 94.7%; descent-override: 21.8%; line-gap-override: 0%; }
+@font-face { font-family: "Nimbus Sans L App"; font-style: normal; font-weight: 700; font-display: swap;
+  src: local("Nimbus Sans L Bold"), local("NimbusSanL-Bol"), url("fonts/nimbus-sans-l-700.woff2") format("woff2");
+  ascent-override: 94.7%; descent-override: 21.8%; line-gap-override: 0%; }
 :root {
   color-scheme: light;
   --page: #f5f2ea; --surface: #f5f2ea; --raised: #fbf9f4; --band: #111111; --on-band: #f5f2ea; --sheet-shadow: #111111;
@@ -37,8 +73,9 @@
   --z1: #a3a09a; --z2: #85827c; --z3: #67645f; --z4: #45433f; --z5: #1d1c1a;
   --good: #0ca30c; --good-ink: #006300; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b;
   --load: #c9c5ba; --wash: .12;
+  --key: rgba(17, 17, 17, .45);   /* a hairline keyline round the flat signal marks, so amber holds 3:1 on paper */
 
-  --font: "Helvetica Neue", Helvetica, "Nimbus Sans", "Nimbus Sans L", Arial, Roboto, sans-serif;
+  --font: "Helvetica Neue", "Nimbus Sans L App", Helvetica, Arial, sans-serif;   /* the clone before "Helvetica": on Android that name is Roboto */
   --fs-label: .6875rem;                                  /* 11 */
   --fs-small: .8125rem;                                  /* 13 */
   --fs-body: .9375rem;                                   /* 15 */
@@ -63,7 +100,7 @@
     --accent: #e8442f; --accent-ink: #e8442f;
     --s1: #e8442f; --s2: #5b8fe0; --s3: #c08a10; --s4: #9a6bd0;
     --z1: #4f4d4a; --z2: #75726d; --z3: #9b9891; --z4: #c4c0b7; --z5: #f2efe8;
-    --good-ink: #0ca30c; --load: #3a3936; --wash: .18;
+    --good-ink: #0ca30c; --load: #3a3936; --wash: .18; --key: transparent;
   }
 }
 :root[data-theme="dark"] {
@@ -74,7 +111,7 @@
   --accent: #e8442f; --accent-ink: #e8442f;
   --s1: #e8442f; --s2: #5b8fe0; --s3: #c08a10; --s4: #9a6bd0;
   --z1: #4f4d4a; --z2: #75726d; --z3: #9b9891; --z4: #c4c0b7; --z5: #f2efe8;
-  --good-ink: #0ca30c; --load: #3a3936; --wash: .18;
+  --good-ink: #0ca30c; --load: #3a3936; --wash: .18; --key: transparent;
 }
 @media (max-width: 600px) { :root { --gutter: var(--sp-4); } }
 
@@ -133,7 +170,14 @@ header.top { position: sticky; top: 0; z-index: 5; background: var(--band); colo
   .tabs .dot { position: absolute; top: var(--sp-3); margin-left: 2px; }
   body:has(.tabs:not([hidden])) { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
   .bar:has(.tabs:not([hidden])) #ride-link { display: none; }       /* the Ride tab opens it, a thumb's reach away */
+  /* the tab bar is the navigation on a phone, so the masthead scrolls away with the page and gives the screen back */
+  header.top:has(.tabs:not([hidden])) { position: static; }
+  section { scroll-margin-top: var(--sp-4); }
+  .bar { flex-wrap: nowrap; }
+  .bar h1 { min-width: 0; flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+@media (max-width: 600px) { .bar h1 .h1-more { display: none; } }
+@media (max-width: 420px) { .tools { gap: var(--sp-1); } .tools .seg .chip { padding: 0 10px; } }   /* mi · km and ☀ · A · ☾ beside the name at 360 px */   /* the installed app's own name on a phone */
 .tools { display: flex; gap: var(--sp-2); }
 .tools .chip, .tools a.chip { color: var(--on-band); border-color: var(--on-band); }
 .tools .chip:hover, .tools a.chip:hover { background: var(--on-band); color: var(--band); }
@@ -150,9 +194,13 @@ button.chip[aria-pressed="true"] { background: var(--ink); color: var(--page); }
 .seg .chip + .chip { border-left: 0; }
 .seg .short { display: none; }
 .seg .long + .short + .sr { display: none; }
-@media (max-width: 400px) { .seg .long { display: none; } .seg .short { display: inline; } .seg .long + .short + .sr { display: inline; } }
+@media (max-width: 760px) { .seg .long { display: none; } .seg .short { display: inline; } .seg .long + .short + .sr { display: inline; } }
 .tools .seg .chip[aria-pressed="true"] { background: var(--on-band); color: var(--band); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* pictograms (weather, stops, places): solid geometric marks in the 1974 AIGA/DOT manner, sized to the type */
+.picto { display: inline-block; flex: none; width: 1.2em; height: 1.2em; vertical-align: -.22em; fill: currentColor; }
+.picto.tile { background: var(--ink); color: var(--page); padding: .16em; box-sizing: border-box; }
+.tomorrow .picto, .wx .picto { margin-right: .2em; }
 [data-theme-pick] .short { font-size: var(--fs-small); letter-spacing: 0; }   /* the ☀ ☾ glyphs, not the mi / km letters */
 
 /* ── the grid: twelve columns, 24px gutters, numbered sections under heavy rules ──────────────────────── */
@@ -171,6 +219,7 @@ h3 { margin-bottom: var(--sp-3); }
 .hero { display: grid; gap: var(--sp-6) var(--sp-5); grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-3); counter-increment: section; }
 .hero > .card { border-top: 0; padding-top: 0; counter-increment: none; }
 @media (max-width: 820px) { .hero { grid-template-columns: 1fr; } }
+@media (min-width: 821px) { .hero > .card:last-child { position: sticky; top: calc(112px + var(--sp-4)); align-self: start; } }
 .call { display: grid; gap: var(--sp-4); align-content: start; }
 .call > .sub:first-child { color: var(--ink); }
 .call > .sub:first-child::before { content: counter(section, decimal-leading-zero) "\2003"; color: var(--accent-ink); }
@@ -178,11 +227,14 @@ h3 { margin-bottom: var(--sp-3); }
 .call .detail { font-size: var(--fs-lead); line-height: 1.35; max-width: 40ch; }
 .call > .sub { max-width: 60ch; }
 .badge { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 28px; padding: 0 var(--sp-3) 0 var(--sp-2); width: fit-content; background: var(--ink); color: var(--page); }
-.badge i { width: 10px; height: 10px; display: inline-block; }
-.badge.hard i, .badge.moderate i { background: var(--good); }
-.badge.easy i { background: var(--warn); }
-.badge.rest i { background: var(--crit); }
-.badge.unknown i { background: var(--muted); }
+/* the day's level, read by shape as well as colour (for colour-blind eyes and a grey screen in the sun): a square filled
+   like a gauge — full for a hard day, 60% moderate, 30% easy, hollow for rest */
+.badge i, .week-ahead summary i { display: inline-block; width: 12px; height: 12px; box-sizing: border-box; border: 2px solid var(--lc, var(--muted));
+  background: linear-gradient(to top, var(--lc, var(--muted)) var(--lf, 0%), transparent var(--lf, 0%)); }
+.badge.hard, .week-ahead li.hard { --lc: var(--good); --lf: 100%; }
+.badge.moderate, .week-ahead li.moderate { --lc: var(--good); --lf: 60%; }
+.badge.easy, .week-ahead li.easy { --lc: var(--warn); --lf: 30%; }
+.badge.rest, .week-ahead li.rest { --lc: var(--crit); --lf: 0%; }
 .reasons { list-style: none; margin: 0; padding: var(--sp-3) 0 0; display: grid; gap: var(--sp-2); border-top: var(--rule-hair) solid var(--ink); max-width: 60ch; }
 .reasons li { display: grid; grid-template-columns: var(--sp-5) 1fr; align-items: baseline; text-wrap: pretty; }
 .reasons li::before { content: "●"; font-size: var(--fs-label); color: var(--good-ink); }
@@ -270,7 +322,8 @@ details.table .scroll { max-height: 264px; overflow: auto; margin-top: var(--sp-
 .commute-call { display: grid; gap: var(--sp-1); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 60ch; }
 .commute-call .label { color: var(--s2); }
 .commute-call.skip .label { color: var(--accent-ink); }
-.fit-notes { margin: var(--sp-2) 0 var(--sp-3); padding-left: var(--sp-4); display: grid; gap: var(--sp-1); max-width: 72ch; }
+.fit-notes { margin: var(--sp-2) 0 var(--sp-3); padding-left: var(--sp-5); display: grid; gap: var(--sp-1); max-width: 72ch; list-style: "\2013\2002"; }
+.fit-notes li::marker, .adjusted li::marker { color: var(--accent-ink); font-weight: 700; }
 .tbl.fit td:first-child { font-weight: 700; }
 .weather { display: grid; gap: var(--sp-1); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 64ch; }
 .weather p { margin: 0; text-wrap: pretty; }
@@ -317,6 +370,8 @@ form.pressure button { min-height: 40px; }
 .checkin > summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-1) var(--sp-2); }
 .checkin .said { color: var(--ink-2); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .feel-in { display: grid; gap: var(--sp-3); margin: var(--sp-2) 0 var(--sp-3); }
+.feel-quick { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin: var(--sp-3) 0 0; }
+.feel-quick .chip { min-height: 44px; padding: 0 var(--sp-4); }
 .feel { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: var(--sp-1); }
 .feel legend { padding: 0; margin-bottom: var(--sp-1); font-weight: 700; }
 .feel .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
@@ -325,6 +380,7 @@ form.pressure button { min-height: 40px; }
 .seg.rpe { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); }
 .seg.rpe .chip { padding: 0; min-width: 0; font-variant-numeric: tabular-nums; }
 .feel .chip { white-space: normal; text-align: center; line-height: 1.15; padding: var(--sp-1); font-size: var(--fs-small); min-width: 0; }
+@media (max-width: 420px) { .feel .chip { letter-spacing: .03em; padding: var(--sp-1) 2px; } }   /* five answers a row at 360 px, none touching its rule */
 /* Today's last lines: tomorrow, and the day's eating, each a tap from its tab */
 .tomorrow, .fuel-line { margin: var(--sp-4) 0 0; padding-top: var(--sp-3); border-top: var(--rule-hair) solid var(--hair); max-width: 60ch; text-wrap: pretty; }
 .tomorrow .label, .fuel-line .label { margin-right: var(--sp-2); }
@@ -340,19 +396,17 @@ form.pressure button { min-height: 40px; }
 .week-ahead { display: grid; gap: var(--sp-2); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 64ch; }
 .week-ahead ol { list-style: none; margin: 0; padding: 0; display: grid; }
 .week-ahead li { border-bottom: var(--rule-hair) solid var(--ink-2); }
-.week-ahead summary { display: grid; width: auto; grid-template-columns: 4.5em 10px 1fr auto 14px; align-items: baseline; gap: var(--sp-2); min-height: 40px; padding: var(--sp-2) 0; cursor: pointer; list-style: none; font-size: var(--fs-body); line-height: var(--lh-snug); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.week-ahead summary { display: grid; width: auto; grid-template-columns: 4.5em 12px 1fr auto 14px; align-items: baseline; gap: var(--sp-2); min-height: 40px; padding: var(--sp-2) 0; cursor: pointer; list-style: none; font-size: var(--fs-body); line-height: var(--lh-snug); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .week-ahead summary::-webkit-details-marker { display: none; }
 .week-ahead summary::before { order: 1; align-self: center; }   /* the +/− at the row's end */
 .week-ahead .dow { font-weight: 700; }
 .week-ahead li.today .dow { color: var(--accent-ink); }
-.week-ahead summary i { width: 10px; height: 10px; align-self: center; background: var(--muted); }
-.week-ahead li.hard summary i, .week-ahead li.moderate summary i { background: var(--good); }
-.week-ahead li.easy summary i { background: var(--warn); }
-.week-ahead li.rest summary i { background: var(--crit); }
-.week-ahead details p { margin: 0 0 var(--sp-2) calc(4.5em + 10px + 2 * var(--sp-2)); }
+.week-ahead summary i { align-self: center; box-shadow: 0 0 0 1px var(--key); }
+.week-ahead details p { margin: 0 0 var(--sp-2) calc(4.5em + 12px + 2 * var(--sp-2)); }
 .adjusted { display: grid; gap: var(--sp-1); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 64ch; }
 .adjusted .label { color: var(--accent-ink); }
-.adjusted ul { margin: 0; padding-left: var(--sp-4); display: grid; gap: var(--sp-1); }
+.adjusted ul { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-1); list-style: "\2013\2002"; }
+.adjusted + .week-ahead { margin-top: var(--sp-5); }
 .fuel { display: grid; gap: var(--sp-2); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 64ch; }
 .fuel .label { color: var(--ink); }
 .meals { display: grid; grid-template-columns: 11ch 1fr; gap: var(--sp-2) var(--sp-3); margin: 0; }
@@ -384,7 +438,7 @@ details.table .scroll.tall { max-height: 448px; }
 details.phone { border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); }
 .qr { display: flex; gap: var(--sp-5); align-items: flex-start; flex-wrap: wrap; margin-top: var(--sp-3); }
 .qrimg { background: #ffffff; border: 1.5px solid #111111; line-height: 0; }
-.qrimg svg { display: block; width: min(320px, 72vw); height: auto; shape-rendering: crispEdges; }
+.qrimg img { display: block; width: min(320px, 72vw); height: auto; }
 .qr p { flex: 1 1 200px; max-width: 40ch; }
 .qr .chip { min-height: 24px; padding: 0 var(--sp-2); vertical-align: baseline; }
 
@@ -424,6 +478,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .55); }
 .sheet input[type=file]::file-selector-button:hover { background: var(--ink); color: var(--page); }
 .sheet .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); }
 .chip.primary { background: var(--ink); color: var(--page); }
+.chip.danger, button.chip.danger:hover { background: #b8281a; border-color: #b8281a; color: #ffffff; }   /* the darker red: white type at AA in both themes */
+.sheet.ask { gap: var(--sp-3); }
+.sheet.ask p { max-width: 40ch; }
+.sheet.ask .actions { margin-top: var(--sp-2); }
+.sheet.ask .chip { min-height: 44px; padding: 0 var(--sp-4); }
 .error { color: var(--accent-ink); font-size: var(--fs-small); min-height: 1em; }
 .welcome .steps ol { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-2); max-width: 52ch; }
 .welcome .steps p { max-width: 52ch; }
@@ -434,6 +493,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .55); }
 
 footer { max-width: 1200px; margin: 0 auto; padding: var(--sp-4) var(--gutter) var(--sp-7); color: var(--ink-2); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: var(--sp-3) var(--sp-5); }
 footer::before { content: ""; grid-column: 1 / -1; border-top: var(--rule-hair) solid var(--ink); margin-bottom: var(--sp-1); }
+footer:empty { display: none; }   /* the welcome screen has no footnotes: no rule hanging under it */
 footer p { max-width: 64ch; }
 
 @media (forced-colors: active) {
@@ -618,6 +678,21 @@ button.big:disabled { color: var(--muted); cursor: default; }
 button.big.go { background: #c42b1b; color: #ffffff; font-size: var(--fs-body); }   /* the sign's red, deep enough for white type at AA */
 button.big.go.paused { background: var(--raised); color: var(--ink); }
 button.big.end:not(:disabled) { color: var(--accent-ink); }
+/* press and hold (End, the unlock bar): the button fills with the sign's red from the left while it's held */
+button.big.hold { background-image: linear-gradient(#c42b1b, #c42b1b); background-repeat: no-repeat; background-size: 0% 100%; }
+button.big.hold.holding { background-size: 100% 100%; transition: background-size var(--hold-ms, 900ms) linear; color: #ffffff; }
+/* the lock: a narrow fifth cell beside End while riding */
+.lockbtn { display: none; }
+body.riding .rfoot { grid-template-columns: 1.5fr 1fr 1fr 1fr 56px; }
+body.riding .lockbtn { display: grid; place-items: center; }
+.lockbtn .picto, #btn-unlock .picto { width: 22px; height: 22px; }
+/* locked: the readings stay in view behind a veil that takes every touch; only the bar along the bottom unlocks */
+.lockveil { position: fixed; left: 0; right: 0; top: 0; height: var(--app-h, 100dvh); z-index: 40; display: flex; flex-direction: column; justify-content: flex-end; touch-action: none; }
+#btn-unlock { display: flex; align-items: center; justify-content: center; gap: var(--sp-3); width: 100%; font-size: var(--fs-body);
+  min-height: calc(68px + var(--rule-major) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: var(--rule-major) solid var(--accent); }   /* exactly over the footer */
+#btn-unlock b { color: var(--accent-ink); }
+@media (max-height: 760px) { #btn-unlock { min-height: calc(60px + var(--rule-major) + env(safe-area-inset-bottom)); } }
+@media (max-height: 640px) { #btn-unlock { min-height: calc(52px + var(--rule-major) + env(safe-area-inset-bottom)); } }
 
 /* ── the turn banner ───────────────────────────────────────────────────────────────────────────────────────── */
 .navbanner { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--gutter); background: #111111; color: #ffffff; min-height: 72px; border-left: var(--sp-3) solid var(--zc2); border-bottom: 1px solid #2a2a2a; }
@@ -672,14 +747,38 @@ html[data-theme="dark"] .maplibregl-ctrl-attrib-button { filter: invert(1); }
 .list ol { list-style: none; margin: 0; padding: 0; }
 .list li { display: grid; grid-template-columns: 2rem 5.5rem minmax(0, 1fr); align-items: baseline; gap: var(--sp-2); padding: var(--sp-2) 0; border-top: var(--rule-hair) solid var(--hair); font-size: var(--fs-body); }
 .list li .ta { font-size: 1.4rem; line-height: 1; text-align: center; }
+.list li .ta .picto { width: 1.75rem; height: 1.75rem; vertical-align: middle; }
+.sform .chip[data-near] { gap: var(--sp-2); }
+.sform .chip[data-near] .picto { width: 20px; height: 20px; }
+.rl-main b .picto { width: 1.4em; height: 1.4em; margin-right: var(--sp-2); }
 .list li b { font-size: var(--fs-lead); font-family: var(--num); }
 .list li.none, .rlist li.none { display: block; color: var(--ink-2); }
 
 /* ── data ──────────────────────────────────────────────────────────────────────────────────────────────────── */
-.rtiles.big { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rtiles.big { grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); }
 .rtiles.big .rtile { padding: var(--sp-2) 0 var(--sp-3); }
 .rtiles.big .v { font-size: clamp(1.9rem, min(12vw, 6.2dvh), 3.5rem); }
-@media (min-width: 640px) { .rtiles.big { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* fields per row, chosen on the bars: 2 big (the default), 3, or 4 small — a head unit's zoom */
+#data-grid[data-cols="3"] { --cols: 3; }
+#data-grid[data-cols="3"] .v { font-size: clamp(1.45rem, min(8.4vw, 5dvh), 2.75rem); }
+#data-grid[data-cols="4"] { --cols: 4; }
+#data-grid[data-cols="4"] .v { font-size: clamp(1.15rem, min(6.2vw, 4dvh), 2.25rem); }
+#data-grid[data-cols="4"] .k { letter-spacing: .04em; }
+@media (min-width: 640px) { #data-grid[data-cols="2"] { --cols: 4; } #data-grid[data-cols="3"] { --cols: 6; } #data-grid[data-cols="4"] { --cols: 8; } }
+.datatools { display: flex; align-items: center; gap: var(--sp-2) var(--sp-3); flex-wrap: wrap; }
+.datatools .k { font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink-2); }
+.datatools .seg .chip { min-width: var(--tap); font-variant-numeric: tabular-nums; }
+.datatools #btn-fields { margin-left: auto; min-height: var(--tap); padding: 0 var(--sp-4); }
+
+/* the fields sheet: six selects for the Workout row, the Data screen's list ticked and ordered */
+.slotgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-3); }
+.flist { list-style: none; margin: 0; padding: 0; border-top: var(--rule-minor) solid var(--ink); }
+.flist li { display: flex; align-items: center; gap: var(--sp-2); border-bottom: 1px solid var(--line); min-height: var(--tap); }
+.flist li label.row { flex: 1 1 auto; }
+.flist li.off label.row { color: var(--ink-2); }
+.flist .ud { display: flex; gap: 1px; }
+.flist .ud .chip { min-width: var(--tap); min-height: var(--tap); padding: 0; }
+.flist .ud .chip:disabled { opacity: .3; cursor: default; }
 
 /* ── laps ──────────────────────────────────────────────────────────────────────────────────────────────────── */
 .lapnow { display: flex; align-items: baseline; gap: var(--sp-3); border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-2); }
@@ -717,6 +816,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .7); }
 .sum > div { border-top: var(--rule-hair) solid var(--ink); padding: var(--sp-2) 0 var(--sp-3); }
 .sum b { display: block; margin-top: var(--sp-1); font-size: var(--fs-ride-figure); line-height: var(--lh-tight); color: var(--ink); text-transform: none; letter-spacing: 0; }
 .sumbar { margin-top: var(--sp-3); }
+/* the yes/no sheet: two full-width buttons, the bar's own size, so a gloved thumb on a moving bike can't miss */
+dialog.ask .sform { gap: var(--sp-2); }
+.askbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: var(--sp-2) calc(-1 * var(--sp-4)) calc(-1 * var(--sp-4)); background: var(--hair); border-top: var(--rule-minor) solid var(--ink); }
+.askbtns button.big { font-size: var(--fs-body); min-height: 68px; }
+.askbtns button.big:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 .tgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
 .tgrid .chip { min-height: var(--tap); }
 .filebtn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); padding: 0 var(--sp-4); cursor: pointer; font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); border: 1.5px solid var(--ink); }
@@ -806,6 +910,21 @@ body.nav .rmain { gap: var(--sp-2); }
 .pclist li .t { text-align: right; font-variant-numeric: tabular-nums; }
 .steptime.ahead { color: var(--good); }
 .steptime.behind { color: var(--crit); }
+
+/* the climb within 2 km or underway, on the Workout screen: a ClimbPro strip in the climb's orange; the weather steps aside */
+.climbstrip { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 2px var(--sp-3); border-top: var(--rule-major) solid var(--zc4); padding-top: var(--sp-2); }
+.climbstrip .k { grid-column: 1 / -1; font-size: var(--fs-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink-2); }
+.climbstrip b { font-size: var(--fs-ride-figure); line-height: 1; white-space: nowrap; }
+.climbstrip .cs-sub { font-size: var(--fs-body); color: var(--ink-2); min-width: 0; }
+.climbstrip .climbbar { grid-column: 1 / -1; display: block; }
+body.climbing .wxbar { display: none; }
+/* the road ahead on Ahead, with no route */
+.free { display: grid; gap: var(--sp-4); border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-2); }
+.free > h2.k { margin: 0; font-size: var(--fs-label); font-weight: 700; line-height: var(--lh-snug); text-transform: uppercase; letter-spacing: var(--track-label); color: var(--ink); }
+.free .climb { border-top-width: var(--rule-minor); }
+/* the wind's cost under "On your line" */
+#wx-cost { font-weight: 700; color: var(--ink); }
+#wx-cost:empty { display: none; }
 </style>
 </head>
 <body class="ride">
@@ -818,7 +937,7 @@ body.nav .rmain { gap: var(--sp-2); }
     <button type="button" class="chip sensor" id="btn-trainer" aria-label="Connect smart trainer"><i></i>Trainer</button>
     <span class="chip sensor" id="gps-chip"><i></i>GPS</span>
     <span class="sbbatt num" id="sb-batt" aria-hidden="true"></span>
-    <button type="button" class="chip" id="btn-settings" aria-label="Settings">⚙</button>
+    <button type="button" class="chip" id="btn-settings" aria-label="Settings">⚙&#xFE0E;</button>
   </div>
 
   <div class="rtabs" role="tablist" aria-label="Ride screens">
@@ -864,19 +983,17 @@ body.nav .rmain { gap: var(--sp-2); }
         <div class="zbar" id="zbar" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><b id="zmark"></b></div>
       </section>
 
-      <section class="rtiles">
-        <div class="rtile"><span class="k">Time</span><span class="v num" id="t-time">0:00</span></div>
-        <button type="button" class="rtile unit-flip" aria-label="Distance; tap to switch imperial / metric"><span class="k">Distance</span><span class="v num" id="t-dist">0.0</span></button>
-        <button type="button" class="rtile unit-flip" aria-label="Speed; tap to switch imperial / metric"><span class="k">Speed</span><span class="v num" id="t-speed">—</span></button>
-        <div class="rtile"><span class="k" id="t-cad-k">Cadence</span><span class="v num" id="t-cad">—</span></div>
-        <div class="rtile"><span class="k">Avg HR</span><span class="v num" id="t-avg">—</span></div>
-        <div class="rtile"><span class="k">Load</span><span class="v num" id="t-load">0</span></div>
+      <section class="climbstrip" id="climbstrip" hidden aria-label="Climb">
+        <span class="k" id="cs-k">Climb ahead</span><b class="num" id="cs-main"></b><span class="cs-sub" id="cs-sub"></span>
+        <span class="climbbar" aria-hidden="true"><span id="cs-bar"></span></span>
       </section>
+
+      <div class="rtiles" id="w-tiles" role="group" aria-label="Your fields"></div>
 
       <section class="rtiles wxbar" id="wxbar" hidden aria-label="Weather">
         <div class="rtile"><span class="k">Temp</span><span class="v num" id="wx-temp">—</span><span class="s" id="wx-feels"></span></div>
         <div class="rtile"><span class="k">Wind</span><span class="v num"><i class="arrow" id="wx-arrow" aria-hidden="true">↑</i><span id="wx-wind">—</span></span><span class="s" id="wx-dir"></span></div>
-        <div class="rtile"><span class="k">On your line</span><span class="v" id="wx-rel">—</span><span class="s" id="wx-src"></span></div>
+        <div class="rtile"><span class="k">On your line</span><span class="v" id="wx-rel">—</span><span class="s" id="wx-cost"></span><span class="s" id="wx-src"></span></div>
       </section>
 
       <div class="fuel" id="fuel" hidden role="alert"><b>Eat &amp; drink</b><span id="fuel-text"></span><button type="button" class="chip" id="fuel-ok">Done</button></div>
@@ -909,6 +1026,20 @@ body.nav .rmain { gap: var(--sp-2); }
     </section>
 
     <section class="page rmain" id="pg-ahead" role="tabpanel" aria-labelledby="tab-ahead" hidden>
+      <section class="free" id="free" hidden aria-labelledby="free-k">
+        <h2 class="k" id="free-k">Road ahead</h2>
+        <figure class="prof">
+          <figcaption class="k" id="free-prof-k">Next 5 mi</figcaption>
+          <canvas id="prof-free" height="120" role="img" aria-label="Elevation profile of the road ahead"></canvas>
+        </figure>
+        <section class="climb" id="free-climb" hidden>
+          <div class="k" id="free-climb-k">Next climb</div>
+          <div class="climbrow"><b class="num" id="free-climb-main">—</b><span id="free-climb-sub"></span></div>
+          <div class="climbbar" aria-hidden="true"><span id="free-climb-bar"></span></div>
+        </section>
+        <section class="list"><h2 class="k">Climbs ahead</h2><ol id="free-list"></ol></section>
+      </section>
+      <p class="note" id="free-note">No route? Ride, and the climbs on the road ahead appear here: the app follows the road you're on in the map and looks up its heights (heights need signal).</p>
       <div class="empty" id="ahead-empty">
         <p>Load a GPX or TCX route to see the climbs, turns and stops ahead, with turn-by-turn directions and a map.</p>
         <button type="button" class="chip primary" id="btn-routes-2">Load a route</button>
@@ -944,26 +1075,12 @@ body.nav .rmain { gap: var(--sp-2); }
     </section>
 
     <section class="page rmain" id="pg-data" role="tabpanel" aria-labelledby="tab-data" hidden>
-      <section class="rtiles big" id="data-grid">
-        <div class="rtile"><span class="k">Ride time</span><span class="v num" id="d-time">0:00</span></div>
-        <div class="rtile"><span class="k">Moving</span><span class="v num" id="d-moving">0:00</span></div>
-        <div class="rtile"><span class="k">Distance</span><span class="v num" id="d-dist">0.0</span></div>
-        <div class="rtile"><span class="k">Speed</span><span class="v num" id="d-speed">—</span></div>
-        <div class="rtile"><span class="k">Avg speed</span><span class="v num" id="d-avgspd">—</span></div>
-        <div class="rtile"><span class="k">Max speed</span><span class="v num" id="d-maxspd">—</span></div>
-        <div class="rtile"><span class="k">Climbed</span><span class="v num" id="d-asc">0</span></div>
-        <div class="rtile"><span class="k">Grade</span><span class="v num" id="d-grade">—</span></div>
-        <div class="rtile"><span class="k">Heart rate</span><span class="v num" id="d-hr">—</span></div>
-        <div class="rtile"><span class="k">Max HR</span><span class="v num" id="d-maxhr">—</span></div>
-        <div class="rtile"><span class="k" id="d-pw-k">Power</span><span class="v num" id="d-pw">—</span></div>
-        <div class="rtile"><span class="k">Cadence</span><span class="v num" id="d-cad">—</span></div>
-        <div class="rtile"><span class="k">Time of day</span><span class="v num" id="d-clock">—</span></div>
-        <div class="rtile"><span class="k">Light left</span><span class="v num" id="d-sunset">—</span><span class="s" id="d-sunset-at"></span></div>
-        <div class="rtile"><span class="k">Elevation</span><span class="v num" id="d-ele">—</span></div>
-        <div class="rtile"><span class="k">Fuel tank</span><span class="v num" id="d-fuel">—</span><span class="s" id="d-fuel-s"></span></div>
-        <div class="rtile" id="d-wbal-t" hidden><span class="k">W′ left</span><span class="v num" id="d-wbal">—</span><span class="s" id="d-wbal-s"></span></div>
-        <div class="rtile"><span class="k">Battery</span><span class="v num" id="d-batt">—</span><span class="s" id="d-batt-left"></span></div>
-      </section>
+      <div class="datatools">
+        <span class="k" id="cols-k">Per row</span>
+        <div class="seg" role="group" aria-labelledby="cols-k"><button type="button" class="chip" data-cols="2">2</button><button type="button" class="chip" data-cols="3">3</button><button type="button" class="chip" data-cols="4">4</button></div>
+        <button type="button" class="chip" id="btn-fields">Fields</button>
+      </div>
+      <div class="rtiles big" id="data-grid" data-cols="2" role="group" aria-label="Ride data"></div>
     </section>
 
     <section class="page rmain" id="pg-laps" role="tabpanel" aria-labelledby="tab-laps" hidden>
@@ -980,8 +1097,12 @@ body.nav .rmain { gap: var(--sp-2); }
     <button type="button" class="big go" id="btn-start">Start</button>
     <button type="button" class="big" id="btn-lap" disabled>Lap</button>
     <button type="button" class="big" id="btn-skip" disabled aria-label="Next step">Next</button>
-    <button type="button" class="big end" id="btn-end" disabled>End</button>
+    <button type="button" class="big end hold" id="btn-end" disabled>End</button>
+    <button type="button" class="big lockbtn" id="btn-lock" aria-label="Lock the screen: rain and bumps can't press anything"><svg class="picto" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 10.5V7.5a5 5 0 0 1 10 0v3h-2.4v-3a2.6 2.6 0 0 0-5.2 0v3z"/><rect x="4.5" y="10.5" width="15" height="10.5"/></svg></button>
   </footer>
+  <div class="lockveil" id="lockveil" hidden>
+    <button type="button" class="big hold" id="btn-unlock"><svg class="picto" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 10.5V7.5a5 5 0 0 1 10 0v3h-2.4v-3a2.6 2.6 0 0 0-5.2 0v3z"/><rect x="4.5" y="10.5" width="15" height="10.5"/></svg><span><b>Locked</b> · hold to unlock</span></button>
+  </div>
 
   <dialog id="settings" aria-labelledby="settings-h">
     <form method="dialog" class="sform">
@@ -995,8 +1116,17 @@ body.nav .rmain { gap: var(--sp-2); }
       <label>Auto lap every (mi or km, 0 = off) <input id="s-autolap" type="number" inputmode="decimal" step="0.5" min="0" max="50"></label>
       <label class="row"><input id="s-voice" type="checkbox"> Spoken cues</label>
       <label class="row"><input id="s-autopause" type="checkbox"> Auto-pause when stopped</label>
+      <label class="row"><input id="s-autolock" type="checkbox"> Lock the screen at Start (hold to unlock: rain and bumps can't press anything)</label>
       <label class="row"><input id="s-steplap" type="checkbox"> A lap at each workout step</label>
       <label class="row"><input id="s-climbs" type="checkbox"> Hold efforts for the next climb (on a route)</label>
+      <label>Climbs ahead without a route
+        <select id="s-freeride">
+          <option value="all">Every climb</option>
+          <option value="cat4">Cat 4 and up</option>
+          <option value="cat3">Cat 3 and up</option>
+          <option value="off">Off</option>
+        </select>
+      </label>
       <label class="row"><input id="s-reroute" type="checkbox"> Reroute automatically when off course</label>
       <label>Routing for detours
         <select id="s-profile">
@@ -1024,9 +1154,21 @@ body.nav .rmain { gap: var(--sp-2); }
         </select>
       </label>
       <label class="row"><input id="s-upload" type="checkbox"> Send rides to the training sync (counts in the plan; to Garmin Connect when the watch didn't record it)</label>
-      <div class="unitrow"><span>Theme</span><div class="seg" role="group" aria-label="Theme"><button type="button" class="chip" data-theme-pick="light" aria-pressed="true">Light</button><button type="button" class="chip" data-theme-pick="dark" aria-pressed="false">Dark</button></div></div>
+      <div class="unitrow"><span>Theme</span><div class="seg" role="group" aria-label="Theme"><button type="button" class="chip" data-theme-pick="light" aria-pressed="false">Light</button><button type="button" class="chip" data-theme-pick="auto" aria-pressed="false">Auto</button><button type="button" class="chip" data-theme-pick="dark" aria-pressed="true">Dark</button></div></div>
       <div class="unitrow"><span>Units</span><div class="seg" role="group" aria-label="Units"><button type="button" class="chip" data-units="mi" aria-pressed="true">Imperial</button><button type="button" class="chip" data-units="km" aria-pressed="false">Metric</button></div></div>
       <div class="actions"><button type="submit" class="chip" value="cancel">Cancel</button><button type="submit" class="chip primary" value="save" id="s-save">Save</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="fields" aria-labelledby="fields-h">
+    <form method="dialog" class="sform">
+      <h2 id="fields-h">Data fields</h2>
+      <h3 class="k">Workout screen</h3>
+      <div class="slotgrid" id="fl-workout"></div>
+      <h3 class="k">Data screen</h3>
+      <p class="note">Tick what to show; ▲ ▼ set the order. Fewer, bigger fields read best on rough ground: set how many a row on the Data screen itself.</p>
+      <ol class="flist" id="fl-data"></ol>
+      <div class="actions"><button type="button" class="chip" id="fl-reset">Reset</button><button type="submit" class="chip primary" value="close">Done</button></div>
     </form>
   </dialog>
 
@@ -1092,6 +1234,8 @@ body.nav .rmain { gap: var(--sp-2); }
       <label id="go-loop-l">A loop of (mi) <input id="go-loop-n" type="number" inputmode="decimal" min="2" max="200" step="1" value="20"></label>
       <div class="actions left"><button type="button" class="chip primary" id="go-loop">Make a loop</button><button type="button" class="chip" id="go-loop-again">Another way round</button></div>
       <p class="note">A loop goes into the wind first, so the wind brings you home. To ride to any point, long-press it on the map.</p>
+      <h3 class="k">Back to the start</h3>
+      <div class="actions left"><button type="button" class="chip primary" id="go-retrace">Retrace my track</button><button type="button" class="chip" id="go-start">Quickest way back</button></div>
       <h3 class="k">Nearby</h3>
       <div class="actions left" role="group" aria-label="Find nearby"><button type="button" class="chip" data-near="water">Water</button><button type="button" class="chip" data-near="food">Food &amp; coffee</button><button type="button" class="chip" data-near="bike">Bike shop</button><button type="button" class="chip" data-near="toilet">Restroom</button></div>
       <p class="note" id="go-msg" role="status"></p>
@@ -1121,6 +1265,14 @@ body.nav .rmain { gap: var(--sp-2); }
         <button type="button" class="chip" data-export="delete">Delete</button>
       </div>
       <div class="actions"><button type="submit" class="chip primary" value="close">Close</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="ask" class="ask" aria-labelledby="ask-h" aria-describedby="ask-p">
+    <form method="dialog" class="sform">
+      <h2 id="ask-h">Are you sure?</h2>
+      <p id="ask-p" class="note"></p>
+      <div class="askbtns"><button type="submit" class="big" value="no" id="ask-no">Cancel</button><button type="submit" class="big go" value="yes" id="ask-yes">OK</button></div>
     </form>
   </dialog>
 
@@ -2199,6 +2351,60 @@ self.RideCore = (() => {
     }
     return r;
   }
+  // ── climbs ahead without a route (Wahoo's Summit Freeride, Garmin's ClimbPro without a course) ─────────────────
+  /** The road you're most likely riding next: from where you are, along the way you're heading, over the map's road
+   *  graph, taking at each junction the way that runs straightest on (the same road's name wins a near tie) and never
+   *  turning back, until `want` m or a dead end. @returns {{points: {lat: number, lon: number}[], names: {along: number, name: string}[], len: number} | null} */
+  function roadAhead(g, from, heading, want = 6000) {
+    if (heading == null) return null;
+    const s = attach(g, from, 40);
+    if (!s) return null;
+    const seen = new Set([s.i]), points = [{ lat: from.lat, lon: from.lon }], names = [];
+    let at = s.i, course = heading, len = 0, name = "";
+    while (len < want) {
+      const A = g.nodes[at];
+      let best = null;
+      for (const e of g.adj[at]) {
+        if (seen.has(e.to) || e.len < 0.01) continue;
+        const B = g.nodes[e.to], b = bearing(A, B), turn = Math.abs(turnAngle(course, b));
+        if (turn > (len < 30 ? 70 : 110)) continue;                         // never back the way you came
+        const score = turn + (name && e.name && e.name !== name ? 20 : 0);
+        if (!best || score < best.score) best = { e, b, score };
+      }
+      if (!best) break;
+      const { e, b } = best;
+      seen.add(e.to);
+      if (e.name && e.name !== name) { names.push({ along: len, name: e.name }); name = e.name; }
+      len += e.len; at = e.to;
+      // the course carries over short wiggles: follow the road's own direction, smoothed over the last few metres
+      course = e.len >= 8 ? b : (course + turnAngle(course, b) * Math.min(1, e.len / 8) + 360) % 360;
+      const B = g.nodes[at];
+      points.push({ lat: B.lat, lon: B.lon });
+    }
+    return points.length > 1 && len > 200 ? { points, names, len } : null;
+  }
+  /** The climbs worth calling out, by the setting: every climb, or only those of a category and up. */
+  const CAT_MIN = { all: 0, cat4: 8000, cat3: 16000, cat2: 32000 };
+  const climbsWorth = (climbs, level = "all") => climbs.filter(c => c.score >= (CAT_MIN[level] ?? 0));
+
+  // ── the wind's cost (Wahoo's AirDrag / AirBoost, estimated): the forecast wind, turned to your direction of travel ──
+  /** What the wind does to you right now. `head` is the headwind at rider height (m/s, + against you); `v` your
+   *  speed (m/s). The aero force goes with the square of the air speed, so: the drag against calm air (%), the watts
+   *  it adds (or saves) at this speed, and the speed the same effort would hold in still air.
+   *  @returns {{drag: number, watts: number, vCalm: number} | null} */
+  function windCost(v, head, grade = 0, { mass = 85, surface = "gravel" } = {}) {
+    if (!(v > 2) || !Number.isFinite(head)) return null;
+    const o = { mass, ...(SURFACE[surface] || SURFACE.gravel) }, air = v + head, th = Math.atan(grade);
+    const now = (o.mass * GRAV * (o.crr * Math.cos(th) + Math.sin(th)) * v + 0.6 * o.cda * air * Math.abs(air) * v) / 0.97;
+    const calm = powerFor(v, grade, o);
+    // the calm-air speed for the same effort; none when the model's speed limits bind (a fast descent past the
+    // surface's cap, a crawl), where comparing against it would put the wind on the wrong side of the ledger
+    const vc = now > 5 ? speedFor(now, grade, o) : v, cap = grade < -0.02 ? o.maxV : 25;
+    return { drag: (air * Math.abs(air)) / (v * v) - 1, watts: now - calm, vCalm: v >= cap || vc >= cap - 0.01 || vc <= 0.81 ? null : vc };
+  }
+  /** The forecast's 10 m wind at a rider's height on open ground (a log wind profile, ~0.65 at 1.2 m). */
+  const RIDER_WIND = 0.65;
+
   /** The z14 tiles covering a few places (and a margin around them, m). */
   function tilesAround(points, margin = 400, z = 14) {
     let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
@@ -2490,7 +2696,7 @@ self.RideCore = (() => {
   const reversed = raw => ({ ...raw, name: `${raw.name} (reversed)`, points: [...raw.points].reverse(), marks: (raw.marks || []).filter(m => !m.cue) });
 
   return { hav, bearing, turnAngle, parseRoute, analyze, eleAt, gradeAt, pointAt, project, navigator, fromBRouter, brouterUrl, pickDetour, sunTimes, kindFromAngle, TURN_WORDS, TURN_ARROWS,
-    commuteCheck, nightStyle, nightColor, ZONES, QUICK, quick, isWork, isEasy, setOf, addRep, cutSet, extend, fitTime, ftpPct, toFIT, toGPX, toTCX, routeGPX, stats, fitCrc, corridorTiles, tileXY, storable, unstore, reversed,
+    commuteCheck, roadAhead, climbsWorth, windCost, RIDER_WIND, nightStyle, nightColor, ZONES, QUICK, quick, isWork, isEasy, setOf, addRep, cutSet, extend, fitTime, ftpPct, toFIT, toGPX, toTCX, routeGPX, stats, fitCrc, corridorTiles, tileXY, storable, unstore, reversed,
     FTMS, TACX, fecMsg, fecPower, fecGrade, fecLevel, fecUser, parseFec, parseBikeData, ftms, ergWatts, hrErg, ergGuess,
     pbf, mvtLines, nameRoads, roadGraph, attach, shortestWays, fromWay, tilesAround, batteryForecast, rideDigest,
     SURFACE, speedFor, sections, pacePlan, paceSuggest, paceAt, hrPctFor, sustainable, carbShare, kcalMin, tank, burn, eat, wbal,
@@ -2509,6 +2715,23 @@ self.RideCore = (() => {
 (async () => {
   const C = /** @type {any} */ (window).RideCore;
   const $ = id => document.getElementById(id);
+  // stops and places as transit-sign pictograms in the 1974 AIGA/DOT manner: a white mark on a black tile, drawn here
+  // (emoji are coloured, differ by phone, and don't belong on a sign)
+  const ST = 'stroke="currentColor" fill="none"';
+  const KIND_PICTO = {
+    water: `<path d="M12 3c3.6 5 6 8.3 6 11.3a6 6 0 0 1-12 0C6 11.3 8.4 8 12 3z"/>`,
+    food: `<rect x="4.5" y="3" width="1.6" height="6"/><rect x="7.2" y="3" width="1.6" height="6"/><rect x="9.9" y="3" width="1.6" height="6"/><path d="M4.5 8.5h7v1a3 3 0 0 1-2.5 2.9V21H7v-8.6A3 3 0 0 1 4.5 9.5z"/><path d="M15 3c2.9 1 4 4.5 4 9h-2.2v9H15z"/>`,
+    bike: `<g ${ST} stroke-width="1.8"><circle cx="6" cy="15.5" r="4"/><circle cx="18" cy="15.5" r="4"/><path d="M6 15.5L9.5 8.5h6.5L12 15.5H6M9.5 8.5L12 15.5M16 8.5l2 7M8 6.5h3.5M14.5 5.5H17"/></g>`,
+    toilet: `<circle cx="6.5" cy="4.5" r="2"/><rect x="4.5" y="7.5" width="4" height="7"/><rect x="4.5" y="14" width="1.7" height="7"/><rect x="6.8" y="14" width="1.7" height="7"/><rect x="11.4" y="2" width="1.2" height="20"/><circle cx="17.5" cy="4.5" r="2"/><path d="M15.5 7.5h4l2 8h-8z"/><rect x="15.6" y="15" width="1.5" height="6"/><rect x="17.9" y="15" width="1.5" height="6"/>`,
+    aid: `<rect x="9" y="3.5" width="6" height="17"/><rect x="3.5" y="9" width="17" height="6"/>`,
+    summit: `<path d="M12 4l9 16H3z"/>`,
+    valley: `<path d="M3 4h18l-9 16z"/>`,
+    danger: `<path fill-rule="evenodd" d="M12 3l10 18H2zM11 9h2v6h-2zM11 16.5h2v2h-2z"/>`,
+    sprint: `<path d="M14 2L5 13.5h6L9 22l10-12h-6l2-8z"/>`,
+    finish: `<rect x="5" y="3" width="1.8" height="18"/><path d="M6.8 4H19l-3 4 3 4H6.8z"/>`,
+    generic: `<circle cx="12" cy="12" r="4"/>`,
+  };
+  const picto = kind => `<svg class="picto tile" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${KIND_PICTO[kind] || KIND_PICTO.generic}</svg>`;
   // keep figures with their units so a cue never breaks "3 / min" on a phone-width line
   const nb = t => String(t ?? "").replace(/ × /g, "\u00a0×\u00a0").replace(/(\d) (?=(?:min|h|s|mi|km|ft|m|bpm|W|g|rpm|TSS|%)(?!\w))/g, "$1\u00a0")
     .replace(/(RPE|Z\d|\+|−|~) (?=[\d(])/g, "$1\u00a0").replace(/(\d)–(?=\d)/g, "$1\u2060–\u2060");   // word joiners keep 88–93 whole
@@ -2517,6 +2740,11 @@ self.RideCore = (() => {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* private mode */ } },
   };
+  /** A yes/no question in ride mode's own sheet: two full-width buttons a gloved thumb can hit on a moving bike, Cancel
+   *  focused, so a bump or a stray Enter never ends a ride or deletes one. @returns {Promise<boolean>} */
+  const UI = /** @type {any} */ (self).FitnessUI;   // common.js: the theme rule and the confirm sheet, shared with the dashboard
+  /** A yes/no question in the app's own sheet; Cancel has the focus. @returns {Promise<boolean>} */
+  const ask = (title, text, yes, opt = {}) => UI.ask(title, text, yes, opt);
   const jget = (k, d) => { try { return JSON.parse(ls.get(k) || "null") ?? d; } catch { return d; } };
 
   // ── config: a link from the dashboard (#z= deflate-raw, or #c= plain; base64url JSON) > inlined by the build >
@@ -2548,10 +2776,11 @@ self.RideCore = (() => {
     ftp: prefs.ftp ?? cfg.ftp ?? 0, autoPause: prefs.autoPause ?? true, stepLap: prefs.stepLap ?? true, autoLap: prefs.autoLap ?? 0,
     climbs: prefs.climbs ?? true, reroute: prefs.reroute ?? true, profile: prefs.profile || "trekking", headingUp: prefs.headingUp ?? true,
     trainer: prefs.trainer || "auto", weight: prefs.weight || cfg.weight_kg || 75, upload: prefs.upload ?? true, saver: prefs.saver || "auto",
+    autoLock: prefs.autoLock ?? false, freeride: prefs.freeride || "all",
   };
   const savePrefs = () => ls.set("fitness-ride-prefs", JSON.stringify({ lthr: P.lthr, max: P.max, rest: P.rest, wheel: P.wheel, fuel: P.fuel, voice: P.voice, ftp: P.ftp,
     autoPause: P.autoPause, stepLap: P.stepLap, autoLap: P.autoLap, climbs: P.climbs, reroute: P.reroute, profile: P.profile, headingUp: P.headingUp,
-    trainer: P.trainer, weight: P.weight, upload: P.upload, saver: P.saver }));
+    trainer: P.trainer, weight: P.weight, upload: P.upload, saver: P.saver, autoLock: P.autoLock, freeride: P.freeride }));
 
   // ── formatting ──────────────────────────────────────────────────────────────────────────────────────────
   const clock = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${String(m).padStart(2, "0")}:${String(x).padStart(2, "0")}` : `${m}:${String(x).padStart(2, "0")}`; };
@@ -2578,6 +2807,7 @@ self.RideCore = (() => {
   const hhmm = t => new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   const compass = d => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(d / 45) % 8];
   const css = name => getComputedStyle(document.body).getPropertyValue(name).trim() || "#888";
+  const face = (px, bold = false) => `${bold ? "700 " : ""}${px}px ${css("--font").replace(/^#888$/, "sans-serif")}`;   // canvas text in the page's Helvetica
 
   // ── storage on this phone: routes, rides and the ride being recorded (IndexedDB) ──────────────────────────
   const DB = (() => {
@@ -2624,7 +2854,7 @@ self.RideCore = (() => {
   const fresh = () => ({ running: false, paused: false, elapsed: 0, moving: 0, dist: 0, step: 0, stepStart: 0, hrSum: 0, hrSecs: 0, hrMax: 0, zones: [0, 0, 0, 0, 0],
     trimp: 0, cadSum: 0, cadSecs: 0, pwSum: 0, pwSecs: 0, fuelAt: 0, fuelDue: false, ended: false, plan: [], intensity: 1, quick: null, rideId: "", wallStart: 0, chunk: 0,
     laps: [], lapStart: 0, lapElapsed: 0, lapDist: 0, pauses: [], autoPaused: false, still: 0, ascent: 0, maxSpeed: 0, held: 0, missed: 0, hot: 0, loadOffered: false, navAlong: 0, battSaid: false, tgtSecs: 0, tgtOn: 0, workSecs: 0, workOn: 0,
-    tank: null, fuelSaid: 0, wbal: null, wbalLow: false, routeT0: null, mine: [], ghostSaid: 0, paceSaid: -1, paceHot: 0, wxSaid: [] });
+    tank: null, fuelSaid: 0, wbal: null, wbalLow: false, routeT0: null, mine: [], ghostSaid: 0, paceSaid: -1, paceHot: 0, wxSaid: [], windSec: 0, windSecs: 0, windHead: 0, windTail: 0 });
   const S = fresh();
   const live = { heading: null, anchor: null, hr: null, hrAt: 0, cad: null, cadAt: 0, power: null, powerAt: 0, pw: [], wheelSpeed: null, wheelAt: 0, gpsSpeed: null, gpsAt: 0, lastFix: null, alt: null, battery: null };
   let samples = [];
@@ -2737,7 +2967,7 @@ self.RideCore = (() => {
     if (kind === "trainer") return hookTrainer(server, hook);
     const a = await hook("cycling_speed_and_cadence", "csc_measurement", onCsc);
     const b = await hook("cycling_power", "cycling_power_measurement", onPower);
-    if (b) $("t-cad-k").textContent = "Power";
+    if (b) live.powerMeter = true;
     return a || b;
   }
   // one live sensor per kind; a connection that fails says why (and what to try) instead of just turning red
@@ -3026,6 +3256,8 @@ self.RideCore = (() => {
     $("wx-arrow").style.transform = `rotate(${(W.dir + 180 - (moving ? live.heading : 0) + 360) % 360}deg)`;
     if (moving && W.wind >= 3) $("wx-rel").textContent = windOn(W, live.heading);
     else $("wx-rel").textContent = W.wind < 3 ? "Calm" : "—";
+    const wc = W.wind >= 3 ? windNow(now) : null;
+    $("wx-cost").textContent = wc && Math.abs(wc.drag) >= 0.05 ? `${dragTxt(wc)} drag · ${wc.watts >= 0 ? "" : "saves "}≈${Math.abs(Math.round(wc.watts))} W` : "";
     const next = wx.alerts.find(a => a.at > now - 15 * 60e3);
     $("wx-src").textContent = next ? next.text.replace(/[.:].*$/, "").replace(/^Rain in about (\d+) minutes/, "Rain in ~$1 min") : wx.src === "Live" ? `Live · ${hhmm(wx.at)}` : "Forecast from the sync";
   }
@@ -3034,9 +3266,27 @@ self.RideCore = (() => {
     const side = Math.sin((W.dir - course) * Math.PI / 180) > 0 ? "right" : "left";
     return Math.abs(along) < 0.35 * W.wind ? `Crosswind from the ${side}` : along > 0 ? `Headwind ${windTxt(along)} ${windU()}` : `Tailwind ${windTxt(-along)} ${windU()}`;
   };
+  // ── the wind's cost, like Wahoo's AirDrag / AirBoost but estimated: the ACE measures the air with a sensor; the phone
+  //    takes the forecast wind (10 m up, cut to rider height), turns it onto your direction of travel and works out
+  //    the extra (or missing) drag, the watts it costs at your speed, and what it's done to your time so far.
+  const surfaceOf = () => (P.profile === "fastbike" ? "road" : P.profile === "mtb" ? "mtb" : "gravel");
+  /** @returns {{drag: number, watts: number, vCalm: number, head: number} | null} */
+  function windNow(now = Date.now(), spd = speedNow(now)) {
+    const W = wx.cur;
+    if (!W || TR.virtual || trainerLive(now) || spd == null || spd < 2 || live.heading == null || now - live.gpsAt > 8000) return null;
+    const head = W.wind / 3.6 * C.RIDER_WIND * Math.cos((W.dir - live.heading) * Math.PI / 180), gr = gradeNow();
+    const c = C.windCost(spd, head, (gr ?? 0) / 100, { mass: P.weight + 11, surface: surfaceOf() });
+    return c && { ...c, head };
+  }
+  const dragTxt = c => `${c.drag >= 0 ? "+" : "−"}${Math.abs(Math.round(c.drag * 100))}%`;
+  const windSoFar = () => !S.windSecs ? "" : Math.abs(S.windSec) < 5 ? "even so far" : `${clock(Math.abs(S.windSec))} ${S.windSec > 0 ? "lost" : "gained"} so far`;
 
   // ── routes: GPX / TCX in, kept on this phone, one chosen for the ride ─────────────────────────────────────
   const NAV = { route: null, nav: null, st: null, detour: null, pace: null, ghosts: null, routing: false, lastReroute: 0, lastAt: 0, names: new Map(), offSaid: false, lastWrong: 0, avoid: [] };
+  /** The road ahead when no route is loaded (Summit Freeride): the way you're most likely riding, from the map, with its
+   *  heights and climbs; rebuilt as you go. */
+  const FREE = { route: null, st: null, names: [], at: 0, tried: 0, busy: false, why: "", said: /** @type {[string, any][]} */ ([]), offSince: 0 };
+  const saidNear = (kind, p) => FREE.said.some(([k, q]) => k === kind && hav(q, p) < 250);
   const routeMsg = $("route-msg");
   async function importFile(file) {
     const text = await file.text();
@@ -3086,7 +3336,7 @@ self.RideCore = (() => {
   }
   async function useRoute(id, keepProgress = false) {
     const row = id ? await DB.get("routes", id).catch(() => null) : null;
-    if (!row) { NAV.route = NAV.nav = NAV.st = NAV.detour = NAV.pace = NAV.ghosts = null; ls.set("fitness-ride-route", null); paintRouteBits(); return; }
+    if (!row) { NAV.route = NAV.nav = NAV.st = NAV.detour = NAV.pace = NAV.ghosts = null; ls.set("fitness-ride-route", null); paintRouteBits(); mapRoute(); return; }
     const route = C.analyze(C.unstore(row));
     const along = keepProgress && NAV.nav ? NAV.nav.state.along : S.running ? S.navAlong : 0;
     NAV.route = route; NAV.nav = C.navigator(route, { startAlong: along }); NAV.st = NAV.nav.status(); NAV.detour = null; NAV.avoid = []; NAV.names.clear();
@@ -3126,7 +3376,7 @@ self.RideCore = (() => {
       const row = await DB.get("routes", b.dataset.get);
       download(new Blob([C.routeGPX(C.analyze(C.unstore(row)))], { type: "application/gpx+xml" }), `${slug(row.name)}.gpx`);
     } else if (b.dataset.del) {
-      if (!confirm("Delete this route from the phone?")) return;
+      if (!await ask("Delete this route?", "It's removed from this phone; the file you loaded it from isn't touched.", "Delete")) return;
       await DB.del("routes", b.dataset.del);
       if (NAV.route && NAV.route.id === b.dataset.del) await useRoute(null);
     }
@@ -3343,11 +3593,16 @@ self.RideCore = (() => {
       if (got[0] && got[0].detour) raw = { name, points: got[0].detour.pts.map(p => ({ lat: p.lat, lon: p.lon, ele: null })), marks: [] };
     }
     if (!raw) { goMsg.textContent = "No way found: no signal, and no saved map between here and there."; return null; }
+    return adoptMade(raw, name);
+  }
+  /** A route made on the bars: kept on the phone and ridden from here (its start is where you are). */
+  async function adoptMade(raw, name) {
     raw.name = name;
     const id = uid(), route = C.analyze({ ...raw, id });
     const row = C.storable(raw, { id, added: Date.now(), dist: route.total, gain: route.gain, climbs: route.climbs.length, turns: route.turns.length, made: true });
     await DB.put("routes", row);
     if (!route.hasEle) fillElevation(row).catch(() => {});
+    S.navAlong = 0;   // a new route starts here, whatever the last one had reached
     await useRoute(id);
     goMsg.textContent = `${name}: ${distTxt(route.total)} ${unitD()}.`;
     say(`${name}. ${nearSay(route.total)}.`, false);
@@ -3381,10 +3636,23 @@ self.RideCore = (() => {
     }
     if (route) $("goto").close();
   }
+  // back to the start: the way you came, turn by turn (your own track, reversed: the climbs and all), or the quickest way
+  $("go-retrace").addEventListener("click", async () => {
+    if (samples.filter(x => x[1] != null).length < 20) { goMsg.textContent = "Nothing to retrace yet: your track starts when the ride does."; return; }
+    let raw;
+    try { raw = C.reversed(C.rideRoute("Retrace", samples)); } catch (e) { goMsg.textContent = (e && e.message) || String(e); return; }
+    if (await adoptMade({ ...raw, marks: [] }, "Retrace to the start")) $("goto").close();
+  });
+  $("go-start").addEventListener("click", async () => {
+    const first = samples.find(x => x[1] != null);
+    if (!first) { goMsg.textContent = "No start yet: your track begins when the ride does."; return; }
+    if (await routeTo([{ lat: first[1], lon: first[2] }], "Back to the start")) $("goto").close();
+  });
   $("go-loop").addEventListener("click", () => makeLoop(false));
   $("go-loop-again").addEventListener("click", () => makeLoop(true));
   const OVERPASS = "https://overpass-api.de/api/interpreter";
   const overpass = async (q, ms = 25000) => { const r = await timed(OVERPASS, ms, { method: "POST", body: new URLSearchParams({ data: q }) }); if (!r.ok) throw new Error(`places ${r.status}`); return C.fromOverpass(await r.json()); };
+  document.querySelectorAll("[data-near]").forEach(b => b.insertAdjacentHTML("afterbegin", picto(/** @type {HTMLElement} */ (b).dataset.near)));
   document.querySelectorAll("[data-near]").forEach(b => b.addEventListener("click", async () => {
     const kind = /** @type {HTMLElement} */ (b).dataset.near, f = live.lastFix, list = $("near-list");
     if (!f) { goMsg.textContent = "Waiting for a GPS fix."; startGps(); return; }
@@ -3395,7 +3663,7 @@ self.RideCore = (() => {
     goMsg.textContent = found.length ? "" : "Nothing within 3 km in OpenStreetMap.";
     list.replaceChildren(...found.map(p => {
       const li = document.createElement("li"), main = document.createElement("div"), nm = document.createElement("b"), sub = document.createElement("span"), go = document.createElement("button");
-      main.className = "rl-main"; nm.textContent = p.name; sub.textContent = `${nearTxt(p.d)} ${compass(bearing(f, p))}${p.hours ? ` · ${p.hours}` : ""}`;
+      main.className = "rl-main"; nm.textContent = p.name; nm.insertAdjacentHTML("afterbegin", picto(kind)); sub.textContent = `${nearTxt(p.d)} ${compass(bearing(f, p))}${p.hours ? ` · ${p.hours}` : ""}`;
       main.append(nm, sub);
       go.type = "button"; go.className = "chip primary"; go.textContent = "Go";
       go.addEventListener("click", async () => { if (await routeTo([{ lat: p.lat, lon: p.lon }], p.name)) $("goto").close(); });
@@ -3441,7 +3709,6 @@ self.RideCore = (() => {
 
   // ── navigation: position on the route, turns, off course and detours ──────────────────────────────────────
   const KIND_WORD = { bike: "Bike shop", water: "Water", food: "Food", aid: "Aid station", summit: "Summit", danger: "Caution", toilet: "Restroom", sprint: "Sprint", valley: "Valley", finish: "Finish", generic: "" };
-  const KIND_ICON = { bike: "🔧", water: "💧", food: "🍴", aid: "✚", summit: "▲", danger: "⚠", toilet: "WC", sprint: "⚡", valley: "▼", finish: "⚑", generic: "•" };
   const active = () => NAV.detour ? NAV.detour : NAV.route ? { route: NAV.route, nav: NAV.nav } : null;
   const turnText = t => {
     if (!t) return "";
@@ -3450,7 +3717,7 @@ self.RideCore = (() => {
   };
   function onFix(fix) {
     NAV.lastAt = Date.now();
-    if (!NAV.route) { paintMap(fix); return; }
+    if (!NAV.route) { freeOnFix(fix); paintMap(fix); return; }
     const v = speedNow() ?? 0, now = Date.now();
     NAV.st = NAV.nav.update(fix, live.heading, v, now);
     if (S.running) S.navAlong = NAV.st.along;
@@ -3651,10 +3918,11 @@ self.RideCore = (() => {
     if (!MAP.ready) return;
     const r = NAV.route;
     set("route", r ? line(r.pts) : { type: "FeatureCollection", features: [] });
-    set("climbs", { type: "FeatureCollection", features: r ? r.climbs.map(c => { const pts = []; for (let d = c.start; d <= c.end; d += 25) pts.push(C.pointAt(r, d)); return { ...line(pts), properties: { g: c.grade * 100 } }; }) : [] });
+    set("climbs", climbFeatures(r, r ? r.climbs : []));
     set("marks", { type: "FeatureCollection", features: r ? [...r.turns.map(t => { const p = C.pointAt(r, t.along); return { type: "Feature", properties: { t: "turn" }, geometry: { type: "Point", coordinates: [p.lon, p.lat] } }; }),
-      ...r.pois.map(p => ({ type: "Feature", properties: { t: p.kind, label: `${KIND_ICON[p.kind] || "•"} ${p.name}`.slice(0, 40) }, geometry: { type: "Point", coordinates: [p.lon, p.lat] } }))] : [] });
+      ...r.pois.map(p => ({ type: "Feature", properties: { t: p.kind, label: (p.name || KIND_WORD[p.kind] || "").slice(0, 40) }, geometry: { type: "Point", coordinates: [p.lon, p.lat] } }))] : [] });
     if (r && !live.lastFix) MAP.map.fitBounds(r.bounds, { padding: 40, duration: 0 });
+    if (!r) mapFree();
   }
   function mapDetour() { set("detour", NAV.detour ? line(NAV.detour.route.pts) : { type: "FeatureCollection", features: [] }); drawCrumb(); }
   function paintMap(fix, force = false) {
@@ -3721,7 +3989,7 @@ self.RideCore = (() => {
     g.scale(dpr, dpr);
     g.fillStyle = css("--page"); g.fillRect(0, 0, W, H);
     const r = NAV.route, fix = live.lastFix || (r ? { lat: r.pts[0].lat, lon: r.pts[0].lon } : null);
-    if (!fix) { g.fillStyle = css("--ink-2"); g.font = "15px sans-serif"; g.fillText("Waiting for GPS…", 16, 32); return; }
+    if (!fix) { g.fillStyle = css("--ink-2"); g.font = face(15); g.fillText("Waiting for GPS…", 16, 32); return; }
     const mpp = (r && !live.lastFix ? Math.max(r.total / Math.min(W, H) * 1.2, 2) : 4) / 2 ** MAP.zoom;
     const rot = P.headingUp && live.heading != null ? -live.heading * Math.PI / 180 : 0;
     const kx = 111320 * Math.cos(fix.lat * Math.PI / 180), ky = 110540, cx = W / 2, cy = P.headingUp && live.lastFix ? H * 0.65 : H / 2;
@@ -3742,10 +4010,10 @@ self.RideCore = (() => {
       g.fillStyle = css("--ink"); g.fill(); g.strokeStyle = css("--page"); g.lineWidth = 2; g.stroke(); g.restore();
     }
     // north arrow and scale
-    g.save(); g.translate(W - 24, 24); g.rotate(rot); g.fillStyle = css("--ink"); g.font = "bold 12px sans-serif"; g.textAlign = "center"; g.fillText("N", 0, -8); g.beginPath(); g.moveTo(0, -4); g.lineTo(5, 8); g.lineTo(-5, 8); g.closePath(); g.fill(); g.restore();
+    g.save(); g.translate(W - 24, 24); g.rotate(rot); g.fillStyle = css("--ink"); g.font = face(12, true); g.textAlign = "center"; g.fillText("N", 0, -8); g.beginPath(); g.moveTo(0, -4); g.lineTo(5, 8); g.lineTo(-5, 8); g.closePath(); g.fill(); g.restore();
     const bar = P.km ? [50, 100, 200, 500, 1000, 2000, 5000, 10000] : [30.48, 60.96, 152.4, 304.8, 402.3, 804.7, 1609.3, 3218.7, 8046.7];
     const len = bar.find(b => b / mpp > 60) || bar[bar.length - 1];
-    g.fillStyle = css("--ink"); g.fillRect(16, H - 22, len / mpp, 3); g.font = "12px sans-serif"; g.textAlign = "left"; g.fillText(nearTxt(len), 16, H - 28);
+    g.fillStyle = css("--ink"); g.fillRect(16, H - 22, len / mpp, 3); g.font = face(12); g.textAlign = "left"; g.fillText(nearTxt(len), 16, H - 28);
   }
   $("m-center").addEventListener("click", () => { MAP.follow = true; MAP.zoom = 0; $("m-center").classList.remove("primary"); paintMap(live.lastFix, true); drawCrumb(); });
   const paintOrient = () => { $("m-orient").textContent = P.headingUp ? "▲ Up" : "N Up"; $("m-orient").setAttribute("aria-pressed", String(P.headingUp)); };
@@ -3782,14 +4050,16 @@ self.RideCore = (() => {
       g.fillStyle = css("--accent"); g.fillRect(x - 1.5, top - 6, 3, bot - top + 6);
       g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill(); g.strokeStyle = css("--page"); g.lineWidth = 2; g.stroke();
     }
-    g.fillStyle = css("--ink-2"); g.font = "11px sans-serif"; g.textAlign = "left";
+    g.fillStyle = css("--ink-2"); g.font = face(11); g.textAlign = "left";
     g.fillText(`${eleTxt(hi)} ${unitE()}`, 2, 11); g.fillText(`${eleTxt(lo)} ${unitE()}`, 2, H - 3);
     g.textAlign = "right"; g.fillText(`${distTxt(to - from)} ${unitD()}`, W - 2, H - 3);
   }
   function renderAhead(force = false) {
     const r = NAV.route;
-    if (!r || (!force && (curPage() !== "ahead" || Date.now() - aheadAt < (saver.on ? 10000 : 2000)))) return;
+    if (!force && (curPage() !== "ahead" || Date.now() - aheadAt < (saver.on ? 10000 : 2000))) return;
     aheadAt = Date.now();
+    $("free").hidden = $("free-note").hidden = !!r;
+    if (!r) { renderFree(); return; }
     const st = NAV.st || NAV.nav.status(), at = st.along, v = avgSpeed();
     $("a-done").innerHTML = `${distTxt(at)}<small>${unitD()}</small>`; $("a-pct").textContent = `${Math.round(st.frac * 100)}% of ${distTxt(r.total)} ${unitD()}`;
     $("a-left").innerHTML = `${distTxt(st.left)}<small>${unitD()}</small>`;
@@ -3807,23 +4077,13 @@ self.RideCore = (() => {
     $("prof-next-k").textContent = `Next ${P.km ? "8 km" : "5 mi"}`;
     if (r.hasEle && curPage() === "ahead") { drawProfile(cvA, r, 0, r.total, at); drawProfile(cvN, r, at, Math.min(r.total, at + span), at); }
     // the climb: ClimbPro's two states, before it and on it
-    const c = st.onClimb || st.climb, box = $("climb");
-    box.hidden = !c;
-    if (c) {
-      const on = !!st.onClimb, done = on ? at - c.start : 0, n = r.climbs.indexOf(c) + 1;
-      $("climb-k").textContent = on ? `Climbing · ${n} of ${r.climbs.length}` : `Next climb · ${n} of ${r.climbs.length}${c.cat ? ` · ${c.cat}` : ""}`;
-      $("climb-main").textContent = on ? `${nearTxt(c.end - at)} to the top` : `in ${nearTxt(c.start - at)}`;
-      const grade = st.grade != null && on ? ` · now ${st.grade.toFixed(0)}%` : "";
-      $("climb-sub").textContent = on ? `${eleTxt(c.top - (C.eleAt(r, at) ?? c.top))} ${unitE()} up to go${grade} · avg ${(c.grade * 100).toFixed(1)}%` : `${nearTxt(c.len)} at ${(c.grade * 100).toFixed(1)}% (max ${(c.maxGrade * 100).toFixed(0)}%) · ${eleTxt(c.gain)} ${unitE()} up`;
-      $("climb-bar").style.width = `${on ? Math.min(100, done / c.len * 100) : 0}%`;
-      box.classList.toggle("on", on);
-    }
+    paintClimbBox("climb", st.onClimb || st.climb, !!st.onClimb, at, r, st.grade, r.climbs);
     const A = active(), ast = NAV.detour ? NAV.detour.st || NAV.detour.nav.status() : st;
     const turns = A.route.turns.filter(t => t.along > ast.along).slice(0, 8);
     $("turn-list").innerHTML = turns.length ? turns.map(t => `<li><span class="ta" aria-hidden="true">${C.TURN_ARROWS[t.kind] || "↑"}</span><b class="num">${nearTxt(t.along - ast.along)}</b><span>${esc(turnText(t))}</span></li>`).join("") : `<li class="none">${A.route.turns.length ? "No more turns: straight to the finish." : "No turns in this file."}</li>`;
     const pois = r.pois.filter(q => q.along > at - 20).slice(0, 8);
     $("poi-wrap").hidden = !r.pois.length;
-    $("poi-list").innerHTML = pois.map(q => `<li><span class="ta" aria-hidden="true">${KIND_ICON[q.kind] || "•"}</span><b class="num">${nearTxt(Math.max(0, q.along - at))}</b><span>${esc(q.name)}${q.desc && q.desc !== q.name ? ` · ${esc(q.desc)}` : ""}</span></li>`).join("") || `<li class="none">None left.</li>`;
+    $("poi-list").innerHTML = pois.map(q => `<li><span class="ta">${picto(q.kind)}<span class="sr">${esc(KIND_WORD[q.kind] || "Point")}:</span></span><b class="num">${nearTxt(Math.max(0, q.along - at))}</b><span>${esc(q.name)}${q.desc && q.desc !== q.name ? ` · ${esc(q.desc)}` : ""}</span></li>`).join("") || `<li class="none">None left.</li>`;
     $("wind-ahead").textContent = windAhead(r, at);
     paintRace();
   }
@@ -3848,6 +4108,194 @@ self.RideCore = (() => {
       $("ghost-sub").textContent = `${when} · ${fmtHM(gh.g.total)}${G.n > 1 ? ` · ${G.n} rides here` : ""}`;
     }
   }
+  // ── climbs ahead with no route (like Wahoo's Summit Freeride): the road you're on, followed through the map tiles
+  //    (the same ones the offline rerouting reads) the way you're heading, its heights from Open-Meteo every 100 m,
+  //    and the climbs on it called out like a route's; rebuilt every few kilometres, or when you turn off it ───────────
+  const tileLines = new Map();   // decoded tiles, newest last (a few dozen kept)
+  let tileUrl = "";
+  async function tilePattern() {
+    if (tileUrl) return tileUrl;
+    tileUrl = (await tileTemplate().catch(() => null)) || "";
+    if (!tileUrl && navigator.onLine) {
+      try {
+        const style = await (await timed(STYLE_URL, 8000)).json(), src = Object.values(style.sources || {}).find(x => /** @type {any} */ (x).type === "vector" && /** @type {any} */ (x).url);
+        const tj = src ? await (await timed(/** @type {any} */ (src).url, 8000)).json() : null;
+        tileUrl = (tj && tj.tiles && tj.tiles[0]) || "";
+      } catch { tileUrl = ""; }
+    }
+    return tileUrl;
+  }
+  /** The road lines in the tiles around some places: from the phone's cache or the network, fetched all at once
+   *  (a slow signal costs one wait, not one per tile), decoded once and kept. `key` names the set of tiles. */
+  async function linesAround(points, tmpl) {
+    const cache = "caches" in window ? await caches.open(TILES) : null, urls = C.tilesAround(points, 1200).map(t => ({ t, url: tmpl.replace("{z}", t.z).replace("{x}", t.x).replace("{y}", t.y) }));
+    const got = await Promise.all(urls.map(async ({ t, url }) => {
+      const have = tileLines.get(url);
+      if (have) return have;
+      try {
+        let res = cache ? await cache.match(url) : null;
+        if (!res && navigator.onLine) res = await timed(url, 8000).catch(() => null);
+        if (!res || !res.ok) return null;
+        let buf = new Uint8Array(await res.arrayBuffer());
+        if (buf[0] === 0x1f && buf[1] === 0x8b) buf = new Uint8Array(await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
+        const lines = C.mvtLines(buf, t.z, t.x, t.y);
+        tileLines.set(url, lines);
+        if (tileLines.size > 48) tileLines.delete(tileLines.keys().next().value);
+        return lines;
+      } catch { return null; }
+    }));
+    const road = [], named = [], key = [];
+    got.forEach((g, k) => { if (g) { road.push(...g.transportation); named.push(...g.transportation_name); key.push(urls[k].url); } });
+    return { road, named, key: key.join("|") };
+  }
+  /** The road graph of the last set of tiles, kept so a rebuild on the same tiles skips building it again. Each use
+   *  gets a copy: placing you on it adds a node. */
+  const graphMemo = { key: "", g: null };
+  const copyGraph = g => ({ ...g, nodes: g.nodes.slice(), adj: g.adj.map(l => l.slice()) });
+  const heights = new Map();   // "lat,lon" (4 decimals, ~10 m) → metres
+  /** Ground heights for points, from Open-Meteo's elevation API (100 a call); null when they can't all be had. */
+  async function heightsOf(pts) {
+    if (heights.size > 20000) heights.clear();   // before asking, so this call's answers are all still here to read
+    const key = p => `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`, need = [...new Set(pts.map(key).filter(k => !heights.has(k)))];
+    for (let i = 0; i < need.length; i += 100) {
+      const part = need.slice(i, i + 100), q = new URLSearchParams({ latitude: part.map(k => k.split(",")[0]).join(","), longitude: part.map(k => k.split(",")[1]).join(",") });
+      try {
+        const r = await timed(`https://api.open-meteo.com/v1/elevation?${q}`, 10000);
+        if (!r.ok) return null;
+        const j = await r.json();
+        part.forEach((k, n) => { if (j.elevation && Number.isFinite(j.elevation[n])) heights.set(k, j.elevation[n]); });
+      } catch { return null; }
+    }
+    const out = pts.map(p => heights.get(key(p)));
+    return out.every(Number.isFinite) ? out : null;
+  }
+  const offset = (p, brg, d) => ({ lat: p.lat + d * Math.cos(brg * Math.PI / 180) / 111320, lon: p.lon + d * Math.sin(brg * Math.PI / 180) / (111320 * Math.cos(p.lat * Math.PI / 180)) });
+  async function freeBuild(fix) {
+    const now = Date.now(), v = speedNow(now) ?? 0;
+    if (FREE.busy || P.freeride === "off" || NAV.route || TR.virtual || live.heading == null || v < 2 || now - FREE.tried < 20000) return;
+    FREE.busy = true; FREE.tried = now;
+    try {
+      const tmpl = await tilePattern();
+      if (!tmpl) { FREE.why = "map"; return; }
+      const heading = live.heading, { road, named, key } = await linesAround([fix, offset(fix, heading, 5000)], tmpl);
+      if (!road.length) { FREE.why = "map"; return; }
+      if (graphMemo.key !== key) { graphMemo.key = key; graphMemo.g = C.roadGraph(C.nameRoads(road, named)); }
+      const way = C.roadAhead(copyGraph(graphMemo.g), fix, heading, 6000);
+      if (!way) { FREE.why = "road"; FREE.route = null; FREE.st = null; return; }
+      // heights every 100 m (one Open-Meteo call per 10 km), laid onto the road's own shape, so a hairpin stays a hairpin
+      const flat = C.analyze({ name: "Road ahead", points: way.points.map(p => ({ ...p, ele: null })) }), pts = [];
+      for (let d = 0; d < flat.total; d += 100) pts.push(C.pointAt(flat, d));
+      pts.push(C.pointAt(flat, flat.total));
+      const h = await heightsOf(pts);
+      if (!h) { FREE.why = "heights"; return; }
+      const eleAt = d => { const f = Math.min(h.length - 1, d / 100), i = Math.floor(f); return i >= h.length - 1 ? h[h.length - 1] : h[i] + (h[i + 1] - h[i]) * (f - i); };
+      FREE.route = C.analyze({ name: (way.names[0] && way.names[0].name) || "Road ahead", points: flat.pts.map((p, i) => ({ lat: p.lat, lon: p.lon, ele: eleAt(flat.cum[i]) })) });
+      FREE.names = way.names; FREE.at = now; FREE.why = ""; FREE.st = null; FREE.offSince = 0;   // a new road: find yourself on it from scratch
+      freeOnFix(live.lastFix || fix, false);
+      mapFree(); renderAhead(true);
+    } catch { FREE.why = "map"; } finally { FREE.busy = false; }
+  }
+  /** Where you are on the road ahead, its next climb, the callouts, and whether it's time to look further. */
+  function freeOnFix(fix, build = true) {
+    const r = FREE.route;
+    if (r) {
+      const pr = C.project(r, fix, FREE.st ? FREE.st.along : null, 1500, 200), list = C.climbsWorth(r.climbs, P.freeride);
+      const climb = list.find(c => c.end > pr.along) || null, on = climb && climb.start <= pr.along ? climb : null;
+      FREE.st = { along: pr.along, off: pr.off, climb, onClimb: on, toClimb: climb && !on ? climb.start - pr.along : null, grade: C.gradeAt(r, pr.along) };
+      // off it for 8 s (a turn onto another road, not one wild fix under trees): find the new road
+      if (pr.off > 60) { FREE.offSince = FREE.offSince || Date.now(); if (Date.now() - FREE.offSince >= 8000) { FREE.st = null; FREE.route = null; FREE.offSince = 0; mapFree(); } }
+      else FREE.offSince = 0;
+      if (FREE.st && pr.off <= 60 && S.running && !S.paused && climb) {
+        const top = C.pointAt(r, climb.end);   // the same climb across rebuilds: its top within 250 m of one already said
+        if (!on && FREE.st.toClimb <= 300 && !saidNear("c", top)) { FREE.said.push(["c", top]); say(`Climb in ${nearSay(FREE.st.toClimb)}: ${nearSay(climb.len).replace(/^a /, "")} at ${(climb.grade * 100).toFixed(0)} percent, ${eleTxt(climb.gain)} ${P.km ? "metres" : "feet"} up.`, false); }
+        if (on && climb.end - pr.along < 40 && !saidNear("t", top)) { FREE.said.push(["t", top]); say("Top of the climb.", false); beep(990, 120); }
+      }
+    }
+    const st = FREE.st;
+    if (build && (!FREE.route || (st && (st.along > FREE.route.total - 2500 || Date.now() - FREE.at > 180e3)))) freeBuild(fix);
+  }
+  /** The Ahead screen with no route: the next 5 miles' profile, the climb, and the climbs further on. */
+  function renderFree() {
+    const r = FREE.route, st = FREE.st;
+    $("free").hidden = !r || !st;
+    $("free-note").hidden = !!(r && st);
+    if (!r || !st) {
+      $("free-note").textContent = P.freeride === "off" ? "Climbs ahead without a route are off (Settings)."
+        : FREE.why === "heights" ? "The road ahead is found, but its heights need signal: the climbs come back when there's some."
+        : FREE.why === "map" ? "The road ahead needs the map: open the Map screen once with signal, or ride where you've loaded a route before."
+        : "No route? Ride, and the climbs on the road ahead appear here: the app follows the road you're on in the map and looks up its heights (heights need signal).";
+      return;
+    }
+    const at = st.along, span = P.km ? 8000 : 8046.7, on = FREE.names.filter(n => n.along <= at + 50).pop();
+    $("free-k").textContent = `Road ahead${on ? ` · ${on.name}` : ""}`;
+    $("free-prof-k").textContent = `Next ${distTxt(Math.min(span, r.total - at))} ${unitD()}`;
+    if (curPage() === "ahead") drawProfile(/** @type {HTMLCanvasElement} */ ($("prof-free")), r, at, Math.min(r.total, at + span), at);
+    paintClimbBox("free-climb", st.onClimb || st.climb, !!st.onClimb, at, r, st.grade, C.climbsWorth(r.climbs, P.freeride));
+    const ahead = C.climbsWorth(r.climbs, P.freeride).filter(c => c.end > at).slice(0, 5);
+    $("free-list").innerHTML = ahead.length ? ahead.map(c => `<li><span class="ta">${picto("summit")}<span class="sr">Climb:</span></span><b class="num">${esc(nearTxt(Math.max(0, c.start - at)))}</b><span>${esc(nearTxt(c.len))} at ${(c.grade * 100).toFixed(1)}% · ${eleTxt(c.gain)} ${unitE()} up${c.cat ? ` · ${c.cat}` : ""}</span></li>`).join("")
+      : `<li class="none">No climbs on the next ${distTxt(r.total - at)} ${unitD()} of this road.</li>`;
+  }
+  /** A climb in words, the one way every screen says it: before it (how far, how long, how steep) and on it (to the
+   *  top, height to go, grade now). `long` adds the average and the steepest bit, for the boxes with room. */
+  function climbText(c, on, at, r, grade, long = false) {
+    const left = Math.max(0, on ? c.end - at : c.start - at), upToGo = Math.max(0, c.top - (C.eleAt(r, at) ?? c.top)), avg = `${(c.grade * 100).toFixed(1)}%`;
+    return {
+      left, main: on ? `${nearTxt(left)} to the top` : `in ${nearTxt(left)}`, pct: on ? Math.min(100, (at - c.start) / c.len * 100) : 0,
+      sub: on ? `${eleTxt(upToGo)} ${unitE()} up to go${grade != null ? ` · now ${grade.toFixed(0)}%` : ""}${long ? ` · avg ${avg}` : ""}`
+        : `${nearTxt(c.len)} at ${avg}${long ? ` (max ${(c.maxGrade * 100).toFixed(0)}%)` : ""} · ${eleTxt(c.gain)} ${unitE()} up`,
+      field: on ? `to the top · ${eleTxt(upToGo)} ${unitE()} up` : `to a ${avg} climb${c.cat ? ` · ${c.cat}` : ""}`,
+    };
+  }
+  /** Climbs as map lines, coloured by their grade. */
+  const climbFeatures = (r, list) => ({ type: "FeatureCollection", features: r ? list.map(c => { const pts = []; for (let d = c.start; d <= c.end; d += 25) pts.push(C.pointAt(r, d)); return { ...line(pts), properties: { g: c.grade * 100 } }; }) : [] });
+  /** A ClimbPro box: before the climb (how far, how long, how steep) and on it (to the top, height to go, grade now). */
+  function paintClimbBox(id, c, on, at, r, grade, list) {
+    const box = $(id);
+    box.hidden = !c;
+    if (!c) return;
+    const n = list.indexOf(c) + 1, t = climbText(c, on, at, r, grade, true);
+    $(`${id}-k`).textContent = on ? `Climbing · ${n} of ${list.length}` : `Next climb · ${n} of ${list.length}${c.cat ? ` · ${c.cat}` : ""}`;
+    $(`${id}-main`).textContent = t.main;
+    $(`${id}-sub`).textContent = t.sub;
+    $(`${id}-bar`).style.width = `${t.pct}%`;
+    box.classList.toggle("on", on);
+  }
+  /** The climb ahead or underway, route or not: the route's own on a route, else the road ahead's. */
+  function climbNow() {
+    if (NAV.route) {
+      const st = NAV.st;
+      if (!st || st.offCourse || NAV.detour) return null;
+      const c = st.onClimb || st.climb;
+      return c ? { c, on: !!st.onClimb, at: st.along, r: NAV.route, grade: st.grade, list: NAV.route.climbs } : null;
+    }
+    const st = FREE.st, c = st && (st.onClimb || st.climb);
+    return c ? { c, on: !!st.onClimb, at: st.along, r: FREE.route, grade: st.grade, list: C.climbsWorth(FREE.route.climbs, P.freeride) } : null;
+  }
+  /** The grade under you: the route's, else the road ahead's. */
+  function gradeNow() {
+    if (NAV.route) return NAV.st && !NAV.st.offCourse ? NAV.st.grade : null;
+    return FREE.st ? FREE.st.grade : null;
+  }
+  /** On the Workout screen, the climb within 2 km or underway, in a strip under the step (the weather steps aside). */
+  function paintClimbStrip() {
+    const c = climbNow(), show = !!c && S.running && (c.on || c.c.start - c.at <= 2000);
+    $("climbstrip").hidden = !show;
+    document.body.classList.toggle("climbing", show);
+    if (!show) return;
+    const { c: cl, on, at, r, grade } = c;
+    $("cs-k").textContent = `${on ? "Climbing" : "Climb ahead"}${cl.cat ? ` · ${cl.cat}` : ""}`;
+    const t = climbText(cl, on, at, r, grade);
+    $("cs-main").textContent = t.main;
+    $("cs-sub").textContent = t.sub;
+    $("cs-bar").style.width = `${t.pct}%`;
+  }
+  /** The road ahead's climbs on the map, in their grade colours, when no route is loaded. */
+  function mapFree() {
+    if (NAV.route || !MAP.ready) return;
+    const r = FREE.route;
+    set("climbs", climbFeatures(r, r ? C.climbsWorth(r.climbs, P.freeride) : []));
+  }
+
   /** How the wind sits on the next stretch of the route: headwind, tailwind or cross, as shares of the distance. */
   function windAhead(r, at) {
     const W = wx.cur;
@@ -3918,7 +4366,7 @@ self.RideCore = (() => {
     saver.on = on;
     document.body.classList.toggle("saver", on);
     const was = document.documentElement.dataset.theme;
-    document.documentElement.dataset.theme = on ? "dark" : ls.get("fitness-theme") || "dark";
+    UI.apply(on);
     if (was !== document.documentElement.dataset.theme) { restyleMap(); drawCrumb(); }
   }
   /** Minutes of riding left: the route at your average speed, else the session's steps; null for a free ride. */
@@ -4132,6 +4580,11 @@ self.RideCore = (() => {
           if (hrSpeed.length > 900) hrSpeed.shift();
         }
         record(now);
+        const wc = windNow(now, spd);
+        if (wc && wc.vCalm > 0) {                                     // what the wind did to the clock: your speed against the calm-air speed for the same effort
+          S.windSecs += dt; S.windSec += dt * Math.max(-1, Math.min(1, 1 - spd / wc.vCalm));
+          if (wc.drag > 0.15) S.windHead += dt; else if (wc.drag < -0.15) S.windTail += dt;
+        }
         // a hot verdict must hold 2 minutes of steady riding before the app acts on it; stop-and-go gets no verdict
         check = C.commuteCheck(hrSpeed, commuteModel(), stops, S.elapsed);
         if (check && check.verdict === "hot") { if (!hotFrom) hotFrom = S.elapsed; } else hotFrom = 0;
@@ -4293,15 +4746,9 @@ self.RideCore = (() => {
       $("step-cue").textContent = ""; $("step-next").textContent = ""; $("step-bar").style.width = "0";
     }
 
-    $("t-time").textContent = clock(S.elapsed);
-    $("t-dist").innerHTML = `${distTxt(S.dist)}<small>${unitD()}</small>`;
-    const spd = speedNow(now);
-    $("t-speed").innerHTML = spd == null ? "—" : `${speedTxt(spd)}<small>${unitS()}</small>`;
-    const showPower = now - live.powerAt < 4000;
-    $("t-cad").innerHTML = showPower ? `${live.power}<small>W</small>` : live.cad != null && now - live.cadAt < 4000 ? `${live.cad}<small>rpm</small>` : "—";
-    $("t-avg").textContent = S.hrSecs ? Math.round(S.hrSum / S.hrSecs) : "—";
-    const tss = tssNow();
-    $("t-load").innerHTML = `${Math.round(tss)}${planned && planned.load ? `<small>/${Math.round(+planned.load)}</small>` : ""}`;
+    const spd = speedNow(now), page = curPage();
+    paintFields(now, spd, page === "data");
+    paintClimbStrip();
     paintWx(now);
     $("fuel").hidden = !S.fuelDue;
     if (S.fuelDue) $("fuel-text").textContent = fuelText();
@@ -4310,8 +4757,6 @@ self.RideCore = (() => {
     paintBrief();
     $("sb-batt").textContent = live.battery ? `${Math.round(live.battery.level * 100)}%` : "";
     $("sb-batt").classList.toggle("low", !!(batt.fc && (rideLeftMin() ?? 0) > batt.fc.hours * 60));
-    const page = curPage();
-    if (page === "data") paintData(now, spd);
     if (page === "laps") { $("lap-no").textContent = String(S.laps.length + 1); $("lap-time").textContent = clock(S.elapsed - S.lapElapsed); $("lap-sub").textContent = `${distTxt(S.dist - S.lapDist)} ${unitD()}`; }
     if (page === "map") { $("m-speed").textContent = spd == null ? "—" : `${speedTxt(spd)}`; const A = active(); const ast = A ? (NAV.detour ? NAV.detour.st : NAV.st) : null; $("m-left").textContent = ast ? `${distTxt(ast.left)}` : "—"; const v = avgSpeed(); $("m-eta").textContent = ast && v > 1 ? hhmm(now + ast.left / v * 1000) : "—"; }
     renderAhead();
@@ -4328,42 +4773,122 @@ self.RideCore = (() => {
     note.hidden = S.running && !S.paused;   // setup help is for before the ride, not on the bars
     document.body.classList.toggle("riding", S.running && !S.paused);
   }
-  function paintData(now, spd) {
-    $("d-time").textContent = clock(S.elapsed); $("d-moving").textContent = clock(S.moving);
-    $("d-dist").innerHTML = `${distTxt(S.dist)}<small>${unitD()}</small>`;
-    $("d-speed").innerHTML = spd == null ? "—" : `${speedTxt(spd)}<small>${unitS()}</small>`;
-    $("d-avgspd").innerHTML = S.moving > 30 ? `${speedTxt(S.dist / S.moving)}<small>${unitS()}</small>` : "—";
-    $("d-maxspd").innerHTML = S.maxSpeed ? `${speedTxt(S.maxSpeed)}<small>${unitS()}</small>` : "—";
-    $("d-asc").innerHTML = `${eleTxt(S.ascent)}<small>${unitE()}</small>`;
-    const gr = NAV.route && NAV.st && !NAV.st.offCourse ? NAV.st.grade : null;
-    $("d-grade").textContent = gr == null ? "—" : `${gr.toFixed(1)}%`;
-    $("d-hr").textContent = live.hr && now - live.hrAt < 5000 ? String(live.hr) : "—";
-    $("d-maxhr").textContent = S.hrMax ? String(S.hrMax) : "—";
-    const p10 = pw10();
-    $("d-pw").innerHTML = p10 != null ? `${p10}<small>W 10s</small>` : S.pwSecs ? `${Math.round(S.pwSum / S.pwSecs)}<small>W avg</small>` : "—";
-    $("d-cad").innerHTML = live.cad != null && now - live.cadAt < 4000 ? `${live.cad}<small>rpm</small>` : "—";
-    const ampm = t => { const x = hhmm(t), m = x.match(/^(.*?)\s*([AaPp]\.?[Mm]\.?)$/); return m ? `${esc(m[1])}<small>${esc(m[2])}</small>` : esc(x); };
-    $("d-clock").innerHTML = ampm(now);
-    const p = live.lastFix || (NAV.route && NAV.route.pts[0]);
-    if (p) {
-      const sun = C.sunTimes(new Date(), p.lat, p.lon), left = (sun.sunset - now) / 60000;
-      $("d-sunset").innerHTML = left > 0 ? (left >= 60 ? `${Math.floor(left / 60)}<small>h</small> ${Math.round(left % 60)}<small>m</small>` : `${Math.round(left)}<small>min</small>`) : "Dark";
-      $("d-sunset-at").textContent = `sunset ${hhmm(sun.sunset)}`;
-    }
-    const e = NAV.route && NAV.st && !NAV.st.offCourse && NAV.route.hasEle ? NAV.st.ele : live.alt;
-    $("d-ele").innerHTML = e == null ? "—" : `${eleTxt(e)}<small>${unitE()}</small>`;
-    if (S.tank) {
-      const e = emptyIn();
-      $("d-fuel").innerHTML = `${Math.round(S.tank.left / S.tank.full * 100)}<small>%</small>`;
-      $("d-fuel-s").textContent = `${Math.round(S.tank.burned)} g used · ${Math.round(S.tank.eaten)} g eaten${e != null ? ` · low in ${hm(e / 60)}` : ""}`;
-    } else { $("d-fuel").textContent = "—"; $("d-fuel-s").textContent = "fills in as you ride"; }
-    const wp = cfg.w_prime_kj ? cfg.w_prime_kj * 1000 : 0;
-    $("d-wbal-t").hidden = !(cfg.cp && wp);
-    if (cfg.cp && wp) { $("d-wbal").innerHTML = S.wbal == null ? "—" : `${Math.round(S.wbal / wp * 100)}<small>%</small>`; $("d-wbal-s").textContent = `${((S.wbal ?? wp) / 1000).toFixed(1)} of ${(wp / 1000).toFixed(1)} kJ above ${cfg.cp} W`; }
-    $("d-batt").textContent = live.battery ? `${Math.round(live.battery.level * 100)}%${live.battery.charging ? " ⚡" : ""}` : "—";
-    const need = rideLeftMin();
-    $("d-batt-left").textContent = live.battery && live.battery.charging ? "charging" : batt.fc ? `lasts ${hm(batt.fc.hours)}${need != null ? (batt.fc.hours * 60 < need ? " · short of the ride" : " · enough") : ""}${saver.on ? " · saver" : ""}` : saver.on ? "saver on" : "";
+  // ── the fields: every reading ride mode has, and the ones you've chosen for the Workout row (six) and the Data
+  //    screen (any number, 2–4 a row: fewer and bigger on rough ground, like a head unit's zoom) ────────────────────────
+  const u = (v, unit) => `${v}<small>${esc(unit)}</small>`;
+  const ampm = t => { const x = hhmm(t), m = x.match(/^(.*?)\s*([AaPp]\.?[Mm]\.?)$/); return m ? `${esc(m[1])}<small>${esc(m[2])}</small>` : esc(x); };
+  const sunNow = now => { const p = live.lastFix || (NAV.route && NAV.route.pts[0]); return p ? C.sunTimes(new Date(now), p.lat, p.lon) : null; };
+  const wpJ = () => (cfg.w_prime_kj ? cfg.w_prime_kj * 1000 : 0);
+  /** @type {{id: string, k: string | (() => string), ks?: string, v: (now: number, spd: number | null) => string, s?: (now: number, spd: number | null) => string, flip?: boolean, hide?: () => boolean}[]} */
+  const FIELDS = [
+    { id: "time", k: "Ride time", ks: "Time", v: () => clock(S.elapsed) },
+    { id: "moving", k: "Moving", v: () => clock(S.moving) },
+    { id: "dist", k: "Distance", v: () => u(distTxt(S.dist), unitD()), flip: true },
+    { id: "speed", k: "Speed", v: (now, spd) => (spd == null ? "—" : u(speedTxt(spd), unitS())), flip: true },
+    { id: "avgspd", k: "Avg speed", v: () => (S.moving > 30 ? u(speedTxt(S.dist / S.moving), unitS()) : "—") },
+    { id: "maxspd", k: "Max speed", v: () => (S.maxSpeed ? u(speedTxt(S.maxSpeed), unitS()) : "—") },
+    { id: "asc", k: "Climbed", v: () => u(eleTxt(S.ascent), unitE()) },
+    { id: "grade", k: "Grade", v: () => { const g = gradeNow(); return g == null ? "—" : `${g.toFixed(1)}%`; } },
+    { id: "climb", k: "Climb", v: () => { const c = climbNow(); return !c ? "—" : esc(nearTxt(climbText(c.c, c.on, c.at, c.r, c.grade).left)); },
+      s: () => { const c = climbNow(); return !c ? "none close" : climbText(c.c, c.on, c.at, c.r, c.grade).field; } },
+    { id: "hr", k: "Heart rate", v: now => (live.hr && now - live.hrAt < 5000 ? String(live.hr) : "—") },
+    { id: "avghr", k: "Avg HR", v: () => (S.hrSecs ? String(Math.round(S.hrSum / S.hrSecs)) : "—") },
+    { id: "maxhr", k: "Max HR", v: () => (S.hrMax ? String(S.hrMax) : "—") },
+    { id: "pw", k: "Power", v: () => { const p10 = pw10(); return p10 != null ? u(p10, "W 10s") : S.pwSecs ? u(Math.round(S.pwSum / S.pwSecs), "W avg") : "—"; } },
+    { id: "cad", k: "Cadence", v: now => (live.cad != null && now - live.cadAt < 4000 ? u(live.cad, "rpm") : "—") },
+    { id: "cadpw", k: () => (live.powerMeter ? "Power" : "Cadence"), v: now => (now - live.powerAt < 4000 ? u(live.power, "W") : live.cad != null && now - live.cadAt < 4000 ? u(live.cad, "rpm") : "—") },
+    { id: "load", k: "Load", v: () => `${Math.round(tssNow())}${planned && planned.load ? `<small>/${Math.round(+planned.load)}</small>` : ""}` },
+    { id: "lap", k: "Lap", v: () => clock(S.elapsed - S.lapElapsed), s: () => `lap ${S.laps.length + 1} · ${distTxt(S.dist - S.lapDist)} ${unitD()}` },
+    { id: "clock", k: "Time of day", v: now => ampm(now) },
+    { id: "sunset", k: "Light left", v: now => { const sun = sunNow(now); if (!sun) return "—"; const left = (sun.sunset - now) / 60000; return left > 0 ? (left >= 60 ? `${Math.floor(left / 60)}<small>h</small> ${Math.round(left % 60)}<small>m</small>` : u(Math.round(left), "min")) : "Dark"; },
+      s: now => { const sun = sunNow(now); return sun ? `sunset ${hhmm(sun.sunset)}` : ""; } },
+    { id: "ele", k: "Elevation", v: () => { const e = NAV.route && NAV.st && !NAV.st.offCourse && NAV.route.hasEle ? NAV.st.ele : live.alt; return e == null ? "—" : u(eleTxt(e), unitE()); } },
+    { id: "wind", k: "Wind", v: now => { const c = windNow(now); return c ? esc(dragTxt(c)) : wx.cur && wx.cur.wind < 3 ? "Calm" : "—"; },
+      s: now => { const c = windNow(now), so = windSoFar(); return c ? `drag · ${c.watts >= 0 ? "" : "saves "}≈${Math.abs(Math.round(c.watts))} W${so ? ` · ${so}` : ""}` : so || "est. from the forecast as you ride"; } },
+    { id: "fuel", k: "Fuel tank", v: () => (S.tank ? u(Math.round(S.tank.left / S.tank.full * 100), "%") : "—"),
+      s: () => { if (!S.tank) return "fills in as you ride"; const e = emptyIn(); return `${Math.round(S.tank.burned)} g used · ${Math.round(S.tank.eaten)} g eaten${e != null ? ` · low in ${hm(e / 60)}` : ""}`; } },
+    { id: "wbal", k: "W′ left", v: () => (S.wbal == null ? "—" : u(Math.round(S.wbal / wpJ() * 100), "%")), s: () => `${((S.wbal ?? wpJ()) / 1000).toFixed(1)} of ${(wpJ() / 1000).toFixed(1)} kJ above ${cfg.cp} W`, hide: () => !(cfg.cp && wpJ()) },
+    { id: "batt", k: "Battery", v: () => (live.battery ? `${Math.round(live.battery.level * 100)}%` : "—"),
+      s: () => { const need = rideLeftMin(); return live.battery && live.battery.charging ? "charging" : batt.fc ? `lasts ${hm(batt.fc.hours)}${need != null ? (batt.fc.hours * 60 < need ? " · short of the ride" : " · enough") : ""}${saver.on ? " · saver" : ""}` : saver.on ? "saver on" : ""; } },
+  ];
+  const FIELD = Object.fromEntries(FIELDS.map(f => [f.id, f]));
+  const T_ID = { time: "t-time", dist: "t-dist", speed: "t-speed", cadpw: "t-cad", avghr: "t-avg", load: "t-load" };   // the Workout row's old ids, kept
+  const S_ID = { sunset: "d-sunset-at", batt: "d-batt-left" };
+  const FIELDS_DEF = { workout: ["time", "dist", "speed", "cadpw", "avghr", "load"],
+    data: ["time", "moving", "dist", "speed", "avgspd", "maxspd", "asc", "grade", "hr", "maxhr", "pw", "cad", "clock", "sunset", "ele", "fuel", "wbal", "wind", "batt"], cols: 2 };
+  const known = id => !!FIELD[id];
+  let FL = (() => {
+    const f = jget("fitness-ride-fields", null);
+    if (!f || !Array.isArray(f.workout) || !Array.isArray(f.data)) return structuredClone(FIELDS_DEF);
+    const w = f.workout.filter(known).slice(0, 6);
+    while (w.length < 6) w.push(FIELDS_DEF.workout[w.length]);
+    return { workout: w, data: [...new Set(f.data.filter(known))], cols: [2, 3, 4].includes(f.cols) ? f.cols : 2 };
+  })();
+  const saveFields = () => ls.set("fitness-ride-fields", JSON.stringify(FL));
+  const label = (f, short = false) => (typeof f.k === "function" ? f.k() : short && f.ks ? f.ks : f.k);
+  /** The Workout row and the Data screen, built from the choices (ids kept stable so nothing else needs to know). */
+  function buildFields() {
+    const used = new Set(), tile = (f, id, sid, cls = "") => {
+      const el = document.createElement(f.flip && cls === "w" ? "button" : "div");
+      el.className = `rtile${f.flip && cls === "w" ? " unit-flip" : ""}`;
+      el.dataset.f = f.id;
+      if (el instanceof HTMLButtonElement) { el.type = "button"; el.setAttribute("aria-label", `${label(f)}; tap to switch imperial / metric`); }
+      const k = document.createElement("span"), v = document.createElement("span");
+      k.className = "k"; v.className = "v num"; v.textContent = "—";
+      if (!used.has(id)) { v.id = id; used.add(id); }
+      el.append(k, v);
+      if (f.s) { const sub = document.createElement("span"); sub.className = "s"; if (!used.has(sid)) { sub.id = sid; used.add(sid); } el.append(sub); }
+      return el;
+    };
+    $("w-tiles").replaceChildren(...FL.workout.map(id => tile(FIELD[id], T_ID[id] || `t-${id}`, `t-${id}-s`, "w")));
+    $("data-grid").replaceChildren(...FL.data.map(id => { const el = tile(FIELD[id], `d-${id}`, S_ID[id] || `d-${id}-s`); el.id = `d-${id}-t`; return el; }));
+    $("data-grid").dataset.cols = String(FL.cols);
+    document.querySelectorAll("button[data-cols]").forEach(b => b.setAttribute("aria-pressed", String(+(/** @type {HTMLElement} */ (b).dataset.cols) === FL.cols)));
   }
+  function paintFields(now, spd, data) {
+    const paint = el => {
+      const f = FIELD[el.dataset.f];
+      if (f.hide && (el.hidden = f.hide())) return;
+      el.querySelector(".k").textContent = label(f, el.parentElement.id === "w-tiles");
+      el.querySelector(".v").innerHTML = f.v(now, spd);
+      if (f.s) el.querySelector(".s").textContent = f.s(now, spd);
+    };
+    for (const el of $("w-tiles").children) paint(/** @type {HTMLElement} */ (el));
+    if (data) for (const el of $("data-grid").children) paint(/** @type {HTMLElement} */ (el));
+  }
+  $("w-tiles").addEventListener("click", e => { if (/** @type {HTMLElement} */ (e.target).closest(".unit-flip")) { setUnits(!P.km); beep(990, 60); } });
+  document.querySelectorAll("button[data-cols]").forEach(b => b.addEventListener("click", () => { FL.cols = +(/** @type {HTMLElement} */ (b).dataset.cols); saveFields(); buildFields(); render(); }));
+  // the fields sheet: six selects for the Workout row; the Data screen's list, ticked and ordered with ▲ ▼
+  function paintFieldSheet(focus = "") {
+    const opts = id => FIELDS.map(f => `<option value="${f.id}"${f.id === id ? " selected" : ""}>${esc(label(f))}</option>`).join("");
+    $("fl-workout").innerHTML = FL.workout.map((id, i) => `<label>Field ${i + 1}<select data-slot="${i}">${opts(id)}</select></label>`).join("");
+    const order = [...FL.data, ...FIELDS.map(f => f.id).filter(id => !FL.data.includes(id))];
+    $("fl-data").innerHTML = order.map(id => {
+      const on = FL.data.includes(id), i = FL.data.indexOf(id), name = esc(label(FIELD[id]));
+      return `<li${on ? "" : ' class="off"'}><label class="row"><input type="checkbox" data-show="${id}"${on ? " checked" : ""}> ${name}</label>
+        <span class="ud"><button type="button" class="chip" data-move="${id}" data-by="-1" aria-label="Move ${name} up"${on && i > 0 ? "" : " disabled"}>▲</button><button type="button" class="chip" data-move="${id}" data-by="1" aria-label="Move ${name} down"${on && i < FL.data.length - 1 ? "" : " disabled"}>▼</button></span></li>`;
+    }).join("");
+    const again = focus && /** @type {HTMLElement | null} */ (document.querySelector(focus));
+    if (again && !(/** @type {HTMLButtonElement} */ (again).disabled)) again.focus();
+  }
+  const fieldsChanged = (focus = "") => { saveFields(); buildFields(); paintFieldSheet(focus); render(); };
+  $("btn-fields").addEventListener("click", () => { paintFieldSheet(); $("fields").showModal(); });
+  $("fields").addEventListener("change", e => {
+    const t = /** @type {HTMLInputElement} */ (e.target);
+    if (t.dataset.slot != null) { FL.workout[+t.dataset.slot] = t.value; fieldsChanged(`[data-slot="${t.dataset.slot}"]`); }
+    else if (t.dataset.show) { FL.data = t.checked ? [...FL.data, t.dataset.show] : FL.data.filter(x => x !== t.dataset.show); fieldsChanged(`[data-show="${t.dataset.show}"]`); }
+  });
+  $("fields").addEventListener("click", e => {
+    const b = /** @type {HTMLElement} */ (e.target).closest("[data-move]");
+    if (b) {
+      const id = /** @type {HTMLElement} */ (b).dataset.move, by = +(/** @type {HTMLElement} */ (b).dataset.by), i = FL.data.indexOf(id), j = i + by;
+      if (i < 0 || j < 0 || j >= FL.data.length) return;
+      [FL.data[i], FL.data[j]] = [FL.data[j], FL.data[i]];
+      fieldsChanged(`[data-move="${id}"][data-by="${by}"]`);
+    }
+    if (/** @type {HTMLElement} */ (e.target).id === "fl-reset") { FL = structuredClone(FIELDS_DEF); fieldsChanged("#fl-reset"); }
+  });
+  buildFields();
 
   // ── screens: tabs, and a swipe across the screen to change them ───────────────────────────────────────────
   const TABS = ["workout", "map", "ahead", "data", "laps"];
@@ -4407,6 +4932,7 @@ self.RideCore = (() => {
     const now = Date.now();
     if (!S.running) {
       const plan = S.plan, quick = S.quick, intensity = S.intensity;
+      FREE.said = []; FREE.offSince = 0;   // a new ride: every climb gets its callouts again
       Object.assign(S, fresh(), { running: true, plan, quick, intensity, rideId: uid(), wallStart: now, lapStart: now });
       samples = []; hrSpeed.length = 0; stops.length = 0; check = null; checkSaid = ""; hotFrom = 0; rollAt = 0; moving = false; rep = { under: 0, high: 0, n: 0 };
       const st = steps();
@@ -4417,6 +4943,7 @@ self.RideCore = (() => {
       setSaver(P.saver === "on");
       beep(880, 200, 2);
       wake();
+      if (P.autoLock) setTimeout(() => { if (S.running) setTouchLock(true); }, 1500);   // after the Start tap has landed
     } else {
       S.paused = !S.paused;
       if (S.paused) { S.pauses.push([now, 0]); if (lock) lock.release().catch(() => {}); flush(true); }
@@ -4432,8 +4959,47 @@ self.RideCore = (() => {
     if (S.running) { if (!S.tank) S.tank = C.tank(P.weight); C.eat(S.tank, fuelGrams()); if (S.tank.left / S.tank.full > 0.5) S.fuelSaid = 0; }
     render();
   });
-  $("btn-end").addEventListener("click", async () => {
-    if (!confirm("End the ride?")) return;
+  // ── press and hold: End (and the unlock bar) fill from the left while held, and act when full. A tap on End asks
+  //    first instead; a keyboard press acts on the button as usual.
+  function holdable(btn, ms, done) {
+    let timer = 0, firedAt = 0;
+    btn.style.setProperty("--hold-ms", `${ms}ms`);
+    const stop = () => { clearTimeout(timer); btn.classList.remove("holding"); };
+    btn.addEventListener("pointerdown", e => {
+      if (/** @type {HTMLButtonElement} */ (btn).disabled || e.button > 0) return;
+      firedAt = 0; btn.classList.add("holding");
+      timer = window.setTimeout(() => { firedAt = Date.now(); stop(); buzz(40); done(); }, ms);
+    });
+    for (const ev of ["pointerup", "pointerleave", "pointercancel"]) btn.addEventListener(ev, stop);
+    btn.addEventListener("contextmenu", e => e.preventDefault());   // a long press is ours, not the browser's menu
+    // true once, just after a completed hold: the click that follows it is spent. Time-boxed, because a hold that hides
+    // or disables its button (End, unlock) never gets that click, and the next real tap must not be swallowed
+    return (/** @type {MouseEvent} */ e) => { if (e.detail === 0) return false; const f = Date.now() - firedAt < 600; firedAt = 0; return f; };   // a keyboard click is never a hold's
+  }
+  const endHeld = holdable($("btn-end"), 900, () => endRide());
+  $("btn-end").addEventListener("click", async e => {
+    if (endHeld(e) || !S.running) return;
+    if (!await ask("End the ride?", "The ride is saved on this phone with its laps, ready to export or send to your sync. Next time, hold End for a second to finish without this question.", "End ride")) return;
+    endRide();
+  });
+
+  // ── the touch lock: rain and bumps press buttons. Locked, the readings stay in view and nothing takes a touch but
+  //    the unlock bar along the bottom, which wants a one-second hold. Lock it from the footer, or at Start (Settings).
+  function setTouchLock(on) {
+    if (on === !$("lockveil").hidden) return;
+    $("lockveil").hidden = !on;
+    for (const el of [document.querySelector(".rtop"), $("pages"), document.querySelector(".rfoot")]) if (el) /** @type {any} */ (el).inert = on;
+    document.body.classList.toggle("locked", on);
+    buzz(30);
+    if (on) $("btn-unlock").focus(); else $("btn-lock").focus();
+  }
+  const unlockHeld = holdable($("btn-unlock"), 800, () => setTouchLock(false));
+  $("btn-unlock").addEventListener("click", e => { if (unlockHeld(e)) return; if (e.detail === 0) setTouchLock(false); });   // Enter / Space unlocks; a touch needs the hold
+  $("btn-lock").addEventListener("click", () => setTouchLock(true));
+
+  async function endRide() {
+    if (!S.running) return;
+    setTouchLock(false);
     const now = Date.now();
     lap(0, now);
     S.running = false; S.paused = false; S.autoPaused = false;
@@ -4447,7 +5013,7 @@ self.RideCore = (() => {
     showRide(ride, true);
     if (ride.elapsed >= 120) queueRide(ride.id);
     render();
-  });
+  }
   daySel.addEventListener("change", pickDay);
 
   // ── saved rides: summary, laps and exports ───────────────────────────────────────────────────────────────
@@ -4467,6 +5033,10 @@ self.RideCore = (() => {
       if (T && T.days != null) out.push(T.ctl - ctl > 1 ? `${raceName} in ${T.days} days asks for fitness ${T.ctl}: ${(T.ctl - ctl).toFixed(1)} to go, and the plan's coming weeks are built for it.` : `${raceName} in ${T.days} days: fitness is at its target ${T.ctl}, so the job now is arriving fresh.`);
     } else out.push(`Load ${tss}${planned && planned.load ? ` of ${Math.round(+planned.load)} planned` : ""}.`);
     if (S.tank && S.tank.burned > 30) out.push(`Fuel: about ${Math.round(S.tank.burned)} g of carbohydrate burned, ${Math.round(S.tank.eaten)} g eaten; the tank ended near ${Math.round(S.tank.left / S.tank.full * 100)}%${S.tank.left / S.tank.full < 0.3 ? ": eat more, earlier, on rides this long" : ""}.`);
+    if (S.windSecs >= 600 && Math.abs(S.windSec) >= 60) {
+      const pc = x => Math.round(x / S.windSecs * 100);
+      out.push(`Wind (estimated from the forecast): it ${S.windSec > 0 ? "cost you" : "gave you"} about ${Math.round(Math.abs(S.windSec) / 60)} min; headwind ${pc(S.windHead)}% of the time, tailwind ${pc(S.windTail)}%.`);
+    }
     if (checkSaid === "hot") out.push("The commute check ran hot on steady riding: worth an easy day and an early night.");
     else if (checkSaid === "fresh") out.push("The commute check ran fresh: lower heart rate than usual for the speed.");
     return out;
@@ -4527,7 +5097,7 @@ self.RideCore = (() => {
     if (!b || !shown) return;
     const kind = b.dataset.export, r = shown;
     if (kind === "delete") {
-      if (!confirm("Delete this ride from the phone?")) return;
+      if (!await ask("Delete this ride?", "It's removed from this phone for good. A copy already sent to your sync or Garmin Connect stays there.", "Delete")) return;
       await DB.del("rides", r.id).catch(() => {}); await DB.del("tracks", r.id).catch(() => {});
       $("summary").close(); paintRides(); return;
     }
@@ -4636,9 +5206,10 @@ self.RideCore = (() => {
   $("btn-settings").addEventListener("click", () => {
     inp("s-lthr").value = P.lthr; inp("s-max").value = P.max; inp("s-rest").value = P.rest; inp("s-wheel").value = P.wheel; inp("s-fuel").value = P.fuel;
     inp("s-ftp").value = P.ftp || 0; inp("s-autolap").value = P.autoLap || 0;
-    inp("s-voice").checked = P.voice; inp("s-autopause").checked = P.autoPause; inp("s-steplap").checked = P.stepLap; inp("s-climbs").checked = P.climbs; inp("s-reroute").checked = P.reroute;
+    inp("s-voice").checked = P.voice; inp("s-autopause").checked = P.autoPause; inp("s-autolock").checked = P.autoLock; inp("s-steplap").checked = P.stepLap; inp("s-climbs").checked = P.climbs; inp("s-reroute").checked = P.reroute;
     /** @type {HTMLSelectElement} */ ($("s-profile")).value = P.profile;
     /** @type {HTMLSelectElement} */ ($("s-trainer")).value = P.trainer; /** @type {HTMLSelectElement} */ ($("s-saver")).value = P.saver;
+    /** @type {HTMLSelectElement} */ ($("s-freeride")).value = P.freeride;
     inp("s-weight").value = P.weight; inp("s-upload").checked = P.upload;
     paintUnits();
     dlg.showModal();
@@ -4647,9 +5218,11 @@ self.RideCore = (() => {
     if (dlg.returnValue !== "save") return;
     const num = (id, d) => { const v = parseFloat(inp(id).value); return Number.isFinite(v) ? v : d; };
     Object.assign(P, { lthr: num("s-lthr", P.lthr), max: num("s-max", P.max), rest: num("s-rest", P.rest), wheel: num("s-wheel", P.wheel), fuel: num("s-fuel", P.fuel),
-      ftp: num("s-ftp", P.ftp), autoLap: num("s-autolap", P.autoLap), voice: inp("s-voice").checked, autoPause: inp("s-autopause").checked, stepLap: inp("s-steplap").checked,
+      ftp: num("s-ftp", P.ftp), autoLap: num("s-autolap", P.autoLap), voice: inp("s-voice").checked, autoPause: inp("s-autopause").checked, autoLock: inp("s-autolock").checked, stepLap: inp("s-steplap").checked,
       climbs: inp("s-climbs").checked, reroute: inp("s-reroute").checked, profile: /** @type {HTMLSelectElement} */ ($("s-profile")).value,
-      trainer: /** @type {HTMLSelectElement} */ ($("s-trainer")).value, saver: /** @type {HTMLSelectElement} */ ($("s-saver")).value, weight: num("s-weight", P.weight), upload: inp("s-upload").checked });
+      trainer: /** @type {HTMLSelectElement} */ ($("s-trainer")).value, saver: /** @type {HTMLSelectElement} */ ($("s-saver")).value, weight: num("s-weight", P.weight), upload: inp("s-upload").checked,
+      freeride: /** @type {HTMLSelectElement} */ ($("s-freeride")).value });
+    if (P.freeride === "off") { FREE.route = null; FREE.st = null; mapFree(); }
     if (TR.kind === "Tacx FE-C") send(C.fecUser(P.weight, 9, P.wheel));
     setSaver(P.saver === "on" || (P.saver === "auto" && saver.auto));
     savePrefs();
@@ -4661,13 +5234,20 @@ self.RideCore = (() => {
   const paintUnits = () => unitBtns.forEach(b => b.setAttribute("aria-pressed", String((/** @type {HTMLElement} */ (b).dataset.units === "km") === P.km)));
   const setUnits = km => { P.km = km; ls.set("fitness-units", km ? "km" : "mi"); paintUnits(); paintRouteBits(); paintLaps(); render(); };
   unitBtns.forEach(b => b.addEventListener("click", () => setUnits(/** @type {HTMLElement} */ (b).dataset.units === "km")));
-  document.querySelectorAll(".unit-flip").forEach(t => t.addEventListener("click", () => { setUnits(!P.km); beep(990, 60); }));
   paintUnits();
 
-  // light / dark: light (paper) unless chosen otherwise; shared with the dashboard. Applies the moment it's tapped.
+  // light / auto / dark: dark unless chosen otherwise; shared with the dashboard. Applies the moment it's tapped, and in
+  // auto follows the phone as it switches (battery saver keeps true black either way)
   const themeBtns = [...document.querySelectorAll("[data-theme-pick]")];
-  const paintTheme = () => themeBtns.forEach(b => b.setAttribute("aria-pressed", String(/** @type {HTMLElement} */ (b).dataset.themePick === (document.documentElement.dataset.theme || "dark"))));
-  themeBtns.forEach(b => b.addEventListener("click", () => { document.documentElement.dataset.theme = /** @type {HTMLElement} */ (b).dataset.themePick; ls.set("fitness-theme", /** @type {HTMLElement} */ (b).dataset.themePick); paintTheme(); drawCrumb(); renderAhead(true); restyleMap(); }));
+  const paintTheme = () => themeBtns.forEach(b => b.setAttribute("aria-pressed", String(/** @type {HTMLElement} */ (b).dataset.themePick === UI.pref())));
+  const applyTheme = () => {
+    const was = document.documentElement.dataset.theme;
+    UI.apply(saver.on);
+    paintTheme();
+    if (was !== document.documentElement.dataset.theme) { drawCrumb(); renderAhead(true); restyleMap(); }
+  };
+  themeBtns.forEach(b => b.addEventListener("click", () => { ls.set("fitness-theme", /** @type {HTMLElement} */ (b).dataset.themePick); applyTheme(); }));
+  UI.deviceDark.addEventListener("change", applyTheme);
   paintTheme();
 
   // the screen's own height, measured: the footer's Start / Lap / Next / End must never sit under the system bars
@@ -4691,11 +5271,12 @@ self.RideCore = (() => {
   const lastRoute = ls.get("fitness-ride-route");
   if (lastRoute) await useRoute(lastRoute, false).catch(() => {});
   setInterval(tick, 1000);
+  if (document.fonts) document.fonts.ready.then(() => { if (NAV.route) renderAhead(true); }).catch(() => {});   // the profiles' figures, redrawn in Helvetica once it's in
   setTimeout(sendRides, 3000);   // anything waiting from an earlier ride
   show(page);
   paintLaps();
   /** @type {any} */ (window).__ride = { S, NAV, P, MAP, get rep() { return rep; }, onFix: f => { live.lastFix = f; onFix(f); }, importFiles, useRoute, live, samples: () => samples, DB,
-    TR, batt, saver, sendRides, outbox, reroute, paceNow, wx, offerGo, routeTo, findGhosts };
+    TR, batt, saver, sendRides, outbox, reroute, paceNow, wx, offerGo, routeTo, findGhosts, FREE, windNow, heights, graphMemo };
 })();
 </script>
 </body>

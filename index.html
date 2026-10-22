@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-OiLRWesQWiCuv+t2MEAjJvTTieEoZ1tCThRJLK5Yntc=' 'sha256-cb/ZHFeCfXvGIz8FBBv7W2BueMLK3+ACnDQodkYBUdo=' 'sha256-lHp05xv0Q7hg0UIqkTd8EyVTJE+OWZZhcrc4VKI+x5w='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de https://overpass-api.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-U9Zm50Jub5dBOW6zr55xoJPu2gMo1ZH5u2jUEGCjFXM=' 'sha256-D7KwmjMPlhglWhgned+N3ZYcy8TjO+RsPCMWR6venks=' 'sha256-JFKD4vWwPAF3pZgkAp19EswOLA0OKG0KE++FzUDlyPU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de https://overpass-api.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <meta name="color-scheme" content="light dark">
@@ -16,7 +16,33 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <script>try { document.documentElement.dataset.theme = localStorage.getItem("fitness-theme") || "dark"; } catch (e) { document.documentElement.dataset.theme = "dark"; }</script>
+  <script>"use strict";
+// Shared by the dashboard (shell.js) and ride mode (ride.js), inlined first in each page's <head>:
+//   theme  the one light / dark rule: battery saver's black, else the choice made here, else ("auto") the phone's;
+//          applied at once, before anything paints, so a dark page never flashes white
+//   ask    the themed confirm sheet (#ask in each page), resolved true for its yes button
+self.FitnessUI = (() => {
+  const deviceDark = matchMedia("(prefers-color-scheme: dark)");
+  /** The stored choice: "light", "dark" or "auto" (dark when nothing's chosen yet). */
+  const pref = () => { try { return localStorage.getItem("fitness-theme") || "dark"; } catch { return "dark"; } };
+  /** The theme to show now. @param {boolean} [saver] battery saver on: always black */
+  const theme = (saver = false) => { if (saver) return "dark"; const t = pref(); return t === "auto" ? (deviceDark.matches ? "dark" : "light") : t; };
+  /** @param {boolean} [saver] */
+  const apply = (saver = false) => { document.documentElement.dataset.theme = theme(saver); };
+  apply();
+  /** @param {string} title @param {string} text @param {string} yes @param {{danger?: boolean}} [opt] @returns {Promise<boolean>} */
+  function ask(title, text, yes, { danger = false } = {}) {
+    const $ = id => /** @type {HTMLElement} */ (document.getElementById(id));
+    const d = /** @type {HTMLDialogElement | null} */ (document.getElementById("ask"));
+    if (!d || typeof d.showModal !== "function") return Promise.resolve(confirm(`${title} ${text}`.trim()));
+    $("ask-h").textContent = title; $("ask-p").textContent = text; $("ask-p").hidden = !text;
+    const y = $("ask-yes"); y.textContent = yes; y.classList.toggle("danger", danger); y.classList.toggle("primary", !danger);
+    d.returnValue = "";
+    return new Promise(res => { d.addEventListener("close", () => res(d.returnValue === "yes"), { once: true }); d.showModal(); $("ask-no").focus(); });
+  }
+  return { deviceDark, pref, theme, apply, ask };
+})();
+</script>
   <style>/* Training & Recovery — set in the International Typographic Style, c. 1978: Helvetica flush left and ragged right
    on a strict grid; black bands and heavy rules instead of boxes and shadows; square corners; uncoated-paper white;
    Swiss red as the one accent; ordered scales as halftone tints of black, like a two-colour print job. The chart
@@ -27,6 +53,16 @@
               two weights (400, 700); labels are uppercase 700 tracked +.08em; big type is tracked tighter as it grows
      space    4 · 8 · 12 · 16 · 24 · 32 · 48 · 64 (an 8-point grid with a 4-point half step)
      rules    6 between sections · 2 inside them · 1 between rows */
+/* Helvetica everywhere: Apple devices have Helvetica Neue; everything else (Android, where "Helvetica" is only an alias
+   for Roboto, and Windows, where it is Arial) gets URW's Nimbus Sans L, the Helvetica clone, from fonts/ (19 KB a
+   weight; GPL, source and license in fitness/fonts/). Its vertical metrics are set so capitals sit centred in the
+   line box, as Helvetica Neue's do: otherwise every uppercase label would ride 0.13 em high in its button. */
+@font-face { font-family: "Nimbus Sans L App"; font-style: normal; font-weight: 400; font-display: swap;
+  src: local("Nimbus Sans L"), local("NimbusSanL-Reg"), url("fonts/nimbus-sans-l-400.woff2") format("woff2");
+  ascent-override: 94.7%; descent-override: 21.8%; line-gap-override: 0%; }
+@font-face { font-family: "Nimbus Sans L App"; font-style: normal; font-weight: 700; font-display: swap;
+  src: local("Nimbus Sans L Bold"), local("NimbusSanL-Bol"), url("fonts/nimbus-sans-l-700.woff2") format("woff2");
+  ascent-override: 94.7%; descent-override: 21.8%; line-gap-override: 0%; }
 :root {
   color-scheme: light;
   --page: #f5f2ea; --surface: #f5f2ea; --raised: #fbf9f4; --band: #111111; --on-band: #f5f2ea; --sheet-shadow: #111111;
@@ -37,8 +73,9 @@
   --z1: #a3a09a; --z2: #85827c; --z3: #67645f; --z4: #45433f; --z5: #1d1c1a;
   --good: #0ca30c; --good-ink: #006300; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b;
   --load: #c9c5ba; --wash: .12;
+  --key: rgba(17, 17, 17, .45);   /* a hairline keyline round the flat signal marks, so amber holds 3:1 on paper */
 
-  --font: "Helvetica Neue", Helvetica, "Nimbus Sans", "Nimbus Sans L", Arial, Roboto, sans-serif;
+  --font: "Helvetica Neue", "Nimbus Sans L App", Helvetica, Arial, sans-serif;   /* the clone before "Helvetica": on Android that name is Roboto */
   --fs-label: .6875rem;                                  /* 11 */
   --fs-small: .8125rem;                                  /* 13 */
   --fs-body: .9375rem;                                   /* 15 */
@@ -63,7 +100,7 @@
     --accent: #e8442f; --accent-ink: #e8442f;
     --s1: #e8442f; --s2: #5b8fe0; --s3: #c08a10; --s4: #9a6bd0;
     --z1: #4f4d4a; --z2: #75726d; --z3: #9b9891; --z4: #c4c0b7; --z5: #f2efe8;
-    --good-ink: #0ca30c; --load: #3a3936; --wash: .18;
+    --good-ink: #0ca30c; --load: #3a3936; --wash: .18; --key: transparent;
   }
 }
 :root[data-theme="dark"] {
@@ -74,7 +111,7 @@
   --accent: #e8442f; --accent-ink: #e8442f;
   --s1: #e8442f; --s2: #5b8fe0; --s3: #c08a10; --s4: #9a6bd0;
   --z1: #4f4d4a; --z2: #75726d; --z3: #9b9891; --z4: #c4c0b7; --z5: #f2efe8;
-  --good-ink: #0ca30c; --load: #3a3936; --wash: .18;
+  --good-ink: #0ca30c; --load: #3a3936; --wash: .18; --key: transparent;
 }
 @media (max-width: 600px) { :root { --gutter: var(--sp-4); } }
 
@@ -133,7 +170,14 @@ header.top { position: sticky; top: 0; z-index: 5; background: var(--band); colo
   .tabs .dot { position: absolute; top: var(--sp-3); margin-left: 2px; }
   body:has(.tabs:not([hidden])) { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
   .bar:has(.tabs:not([hidden])) #ride-link { display: none; }       /* the Ride tab opens it, a thumb's reach away */
+  /* the tab bar is the navigation on a phone, so the masthead scrolls away with the page and gives the screen back */
+  header.top:has(.tabs:not([hidden])) { position: static; }
+  section { scroll-margin-top: var(--sp-4); }
+  .bar { flex-wrap: nowrap; }
+  .bar h1 { min-width: 0; flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
+@media (max-width: 600px) { .bar h1 .h1-more { display: none; } }
+@media (max-width: 420px) { .tools { gap: var(--sp-1); } .tools .seg .chip { padding: 0 10px; } }   /* mi · km and ☀ · A · ☾ beside the name at 360 px */   /* the installed app's own name on a phone */
 .tools { display: flex; gap: var(--sp-2); }
 .tools .chip, .tools a.chip { color: var(--on-band); border-color: var(--on-band); }
 .tools .chip:hover, .tools a.chip:hover { background: var(--on-band); color: var(--band); }
@@ -150,9 +194,13 @@ button.chip[aria-pressed="true"] { background: var(--ink); color: var(--page); }
 .seg .chip + .chip { border-left: 0; }
 .seg .short { display: none; }
 .seg .long + .short + .sr { display: none; }
-@media (max-width: 400px) { .seg .long { display: none; } .seg .short { display: inline; } .seg .long + .short + .sr { display: inline; } }
+@media (max-width: 760px) { .seg .long { display: none; } .seg .short { display: inline; } .seg .long + .short + .sr { display: inline; } }
 .tools .seg .chip[aria-pressed="true"] { background: var(--on-band); color: var(--band); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* pictograms (weather, stops, places): solid geometric marks in the 1974 AIGA/DOT manner, sized to the type */
+.picto { display: inline-block; flex: none; width: 1.2em; height: 1.2em; vertical-align: -.22em; fill: currentColor; }
+.picto.tile { background: var(--ink); color: var(--page); padding: .16em; box-sizing: border-box; }
+.tomorrow .picto, .wx .picto { margin-right: .2em; }
 [data-theme-pick] .short { font-size: var(--fs-small); letter-spacing: 0; }   /* the ☀ ☾ glyphs, not the mi / km letters */
 
 /* ── the grid: twelve columns, 24px gutters, numbered sections under heavy rules ──────────────────────── */
@@ -171,6 +219,7 @@ h3 { margin-bottom: var(--sp-3); }
 .hero { display: grid; gap: var(--sp-6) var(--sp-5); grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); border-top: var(--rule-major) solid var(--ink); padding-top: var(--sp-3); counter-increment: section; }
 .hero > .card { border-top: 0; padding-top: 0; counter-increment: none; }
 @media (max-width: 820px) { .hero { grid-template-columns: 1fr; } }
+@media (min-width: 821px) { .hero > .card:last-child { position: sticky; top: calc(112px + var(--sp-4)); align-self: start; } }
 .call { display: grid; gap: var(--sp-4); align-content: start; }
 .call > .sub:first-child { color: var(--ink); }
 .call > .sub:first-child::before { content: counter(section, decimal-leading-zero) "\2003"; color: var(--accent-ink); }
@@ -178,11 +227,14 @@ h3 { margin-bottom: var(--sp-3); }
 .call .detail { font-size: var(--fs-lead); line-height: 1.35; max-width: 40ch; }
 .call > .sub { max-width: 60ch; }
 .badge { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: 28px; padding: 0 var(--sp-3) 0 var(--sp-2); width: fit-content; background: var(--ink); color: var(--page); }
-.badge i { width: 10px; height: 10px; display: inline-block; }
-.badge.hard i, .badge.moderate i { background: var(--good); }
-.badge.easy i { background: var(--warn); }
-.badge.rest i { background: var(--crit); }
-.badge.unknown i { background: var(--muted); }
+/* the day's level, read by shape as well as colour (for colour-blind eyes and a grey screen in the sun): a square filled
+   like a gauge — full for a hard day, 60% moderate, 30% easy, hollow for rest */
+.badge i, .week-ahead summary i { display: inline-block; width: 12px; height: 12px; box-sizing: border-box; border: 2px solid var(--lc, var(--muted));
+  background: linear-gradient(to top, var(--lc, var(--muted)) var(--lf, 0%), transparent var(--lf, 0%)); }
+.badge.hard, .week-ahead li.hard { --lc: var(--good); --lf: 100%; }
+.badge.moderate, .week-ahead li.moderate { --lc: var(--good); --lf: 60%; }
+.badge.easy, .week-ahead li.easy { --lc: var(--warn); --lf: 30%; }
+.badge.rest, .week-ahead li.rest { --lc: var(--crit); --lf: 0%; }
 .reasons { list-style: none; margin: 0; padding: var(--sp-3) 0 0; display: grid; gap: var(--sp-2); border-top: var(--rule-hair) solid var(--ink); max-width: 60ch; }
 .reasons li { display: grid; grid-template-columns: var(--sp-5) 1fr; align-items: baseline; text-wrap: pretty; }
 .reasons li::before { content: "●"; font-size: var(--fs-label); color: var(--good-ink); }
@@ -270,7 +322,8 @@ details.table .scroll { max-height: 264px; overflow: auto; margin-top: var(--sp-
 .commute-call { display: grid; gap: var(--sp-1); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 60ch; }
 .commute-call .label { color: var(--s2); }
 .commute-call.skip .label { color: var(--accent-ink); }
-.fit-notes { margin: var(--sp-2) 0 var(--sp-3); padding-left: var(--sp-4); display: grid; gap: var(--sp-1); max-width: 72ch; }
+.fit-notes { margin: var(--sp-2) 0 var(--sp-3); padding-left: var(--sp-5); display: grid; gap: var(--sp-1); max-width: 72ch; list-style: "\2013\2002"; }
+.fit-notes li::marker, .adjusted li::marker { color: var(--accent-ink); font-weight: 700; }
 .tbl.fit td:first-child { font-weight: 700; }
 .weather { display: grid; gap: var(--sp-1); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 64ch; }
 .weather p { margin: 0; text-wrap: pretty; }
@@ -317,6 +370,8 @@ form.pressure button { min-height: 40px; }
 .checkin > summary { cursor: pointer; min-height: var(--tap); display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-1) var(--sp-2); }
 .checkin .said { color: var(--ink-2); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .feel-in { display: grid; gap: var(--sp-3); margin: var(--sp-2) 0 var(--sp-3); }
+.feel-quick { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3); margin: var(--sp-3) 0 0; }
+.feel-quick .chip { min-height: 44px; padding: 0 var(--sp-4); }
 .feel { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: var(--sp-1); }
 .feel legend { padding: 0; margin-bottom: var(--sp-1); font-weight: 700; }
 .feel .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
@@ -325,6 +380,7 @@ form.pressure button { min-height: 40px; }
 .seg.rpe { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); }
 .seg.rpe .chip { padding: 0; min-width: 0; font-variant-numeric: tabular-nums; }
 .feel .chip { white-space: normal; text-align: center; line-height: 1.15; padding: var(--sp-1); font-size: var(--fs-small); min-width: 0; }
+@media (max-width: 420px) { .feel .chip { letter-spacing: .03em; padding: var(--sp-1) 2px; } }   /* five answers a row at 360 px, none touching its rule */
 /* Today's last lines: tomorrow, and the day's eating, each a tap from its tab */
 .tomorrow, .fuel-line { margin: var(--sp-4) 0 0; padding-top: var(--sp-3); border-top: var(--rule-hair) solid var(--hair); max-width: 60ch; text-wrap: pretty; }
 .tomorrow .label, .fuel-line .label { margin-right: var(--sp-2); }
@@ -340,19 +396,17 @@ form.pressure button { min-height: 40px; }
 .week-ahead { display: grid; gap: var(--sp-2); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 64ch; }
 .week-ahead ol { list-style: none; margin: 0; padding: 0; display: grid; }
 .week-ahead li { border-bottom: var(--rule-hair) solid var(--ink-2); }
-.week-ahead summary { display: grid; width: auto; grid-template-columns: 4.5em 10px 1fr auto 14px; align-items: baseline; gap: var(--sp-2); min-height: 40px; padding: var(--sp-2) 0; cursor: pointer; list-style: none; font-size: var(--fs-body); line-height: var(--lh-snug); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.week-ahead summary { display: grid; width: auto; grid-template-columns: 4.5em 12px 1fr auto 14px; align-items: baseline; gap: var(--sp-2); min-height: 40px; padding: var(--sp-2) 0; cursor: pointer; list-style: none; font-size: var(--fs-body); line-height: var(--lh-snug); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .week-ahead summary::-webkit-details-marker { display: none; }
 .week-ahead summary::before { order: 1; align-self: center; }   /* the +/− at the row's end */
 .week-ahead .dow { font-weight: 700; }
 .week-ahead li.today .dow { color: var(--accent-ink); }
-.week-ahead summary i { width: 10px; height: 10px; align-self: center; background: var(--muted); }
-.week-ahead li.hard summary i, .week-ahead li.moderate summary i { background: var(--good); }
-.week-ahead li.easy summary i { background: var(--warn); }
-.week-ahead li.rest summary i { background: var(--crit); }
-.week-ahead details p { margin: 0 0 var(--sp-2) calc(4.5em + 10px + 2 * var(--sp-2)); }
+.week-ahead summary i { align-self: center; box-shadow: 0 0 0 1px var(--key); }
+.week-ahead details p { margin: 0 0 var(--sp-2) calc(4.5em + 12px + 2 * var(--sp-2)); }
 .adjusted { display: grid; gap: var(--sp-1); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 64ch; }
 .adjusted .label { color: var(--accent-ink); }
-.adjusted ul { margin: 0; padding-left: var(--sp-4); display: grid; gap: var(--sp-1); }
+.adjusted ul { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-1); list-style: "\2013\2002"; }
+.adjusted + .week-ahead { margin-top: var(--sp-5); }
 .fuel { display: grid; gap: var(--sp-2); border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); max-width: 64ch; }
 .fuel .label { color: var(--ink); }
 .meals { display: grid; grid-template-columns: 11ch 1fr; gap: var(--sp-2) var(--sp-3); margin: 0; }
@@ -384,7 +438,7 @@ details.table .scroll.tall { max-height: 448px; }
 details.phone { border-top: var(--rule-hair) solid var(--ink); padding-top: var(--sp-3); }
 .qr { display: flex; gap: var(--sp-5); align-items: flex-start; flex-wrap: wrap; margin-top: var(--sp-3); }
 .qrimg { background: #ffffff; border: 1.5px solid #111111; line-height: 0; }
-.qrimg svg { display: block; width: min(320px, 72vw); height: auto; shape-rendering: crispEdges; }
+.qrimg img { display: block; width: min(320px, 72vw); height: auto; }
 .qr p { flex: 1 1 200px; max-width: 40ch; }
 .qr .chip { min-height: 24px; padding: 0 var(--sp-2); vertical-align: baseline; }
 
@@ -424,6 +478,11 @@ dialog::backdrop { background: rgba(0, 0, 0, .55); }
 .sheet input[type=file]::file-selector-button:hover { background: var(--ink); color: var(--page); }
 .sheet .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); }
 .chip.primary { background: var(--ink); color: var(--page); }
+.chip.danger, button.chip.danger:hover { background: #b8281a; border-color: #b8281a; color: #ffffff; }   /* the darker red: white type at AA in both themes */
+.sheet.ask { gap: var(--sp-3); }
+.sheet.ask p { max-width: 40ch; }
+.sheet.ask .actions { margin-top: var(--sp-2); }
+.sheet.ask .chip { min-height: 44px; padding: 0 var(--sp-4); }
 .error { color: var(--accent-ink); font-size: var(--fs-small); min-height: 1em; }
 .welcome .steps ol { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-2); max-width: 52ch; }
 .welcome .steps p { max-width: 52ch; }
@@ -434,6 +493,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .55); }
 
 footer { max-width: 1200px; margin: 0 auto; padding: var(--sp-4) var(--gutter) var(--sp-7); color: var(--ink-2); display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: var(--sp-3) var(--sp-5); }
 footer::before { content: ""; grid-column: 1 / -1; border-top: var(--rule-hair) solid var(--ink); margin-bottom: var(--sp-1); }
+footer:empty { display: none; }   /* the welcome screen has no footnotes: no rule hanging under it */
 footer p { max-width: 64ch; }
 
 @media (forced-colors: active) {
@@ -457,7 +517,7 @@ footer p { max-width: 64ch; }
 <body>
   <header class="top">
     <div class="bar">
-      <h1>Training &amp; Recovery</h1>
+      <h1>Training<span class="h1-more"> &amp; Recovery</span></h1>
       <div class="tools">
         <button type="button" class="chip" id="install" hidden>Install</button>
         <a class="chip" id="ride-link" href="ride.html">Ride mode</a>
@@ -465,7 +525,7 @@ footer p { max-width: 64ch; }
           <button type="button" class="chip" data-units="mi" aria-pressed="true"><span class="long">Imperial</span><span class="short">mi</span></button><button type="button" class="chip" data-units="km" aria-pressed="false"><span class="long">Metric</span><span class="short">km</span></button>
         </div>
         <div class="seg" role="group" aria-label="Theme">
-          <button type="button" class="chip" data-theme-pick="light" aria-pressed="false"><span class="long">Light</span><span class="short" aria-hidden="true">☀</span><span class="sr">Light</span></button><button type="button" class="chip" data-theme-pick="dark" aria-pressed="false"><span class="long">Dark</span><span class="short" aria-hidden="true">☾</span><span class="sr">Dark</span></button>
+          <button type="button" class="chip" data-theme-pick="light" aria-pressed="false"><span class="long">Light</span><span class="short" aria-hidden="true">☀</span><span class="sr">Light</span></button><button type="button" class="chip" data-theme-pick="auto" aria-pressed="false" title="Follow the phone's setting"><span class="long">Auto</span><span class="short" aria-hidden="true">A</span><span class="sr">Auto</span></button><button type="button" class="chip" data-theme-pick="dark" aria-pressed="false"><span class="long">Dark</span><span class="short" aria-hidden="true">☾</span><span class="sr">Dark</span></button>
         </div>
       </div>
       <nav id="tabs" class="tabs" aria-label="Sections" hidden></nav>
@@ -501,6 +561,13 @@ footer p { max-width: 64ch; }
       <div class="actions"><button type="button" class="chip" data-action="forget">Remove from this device</button><button type="submit" class="chip" value="cancel">Close</button></div>
     </form>
   </dialog>
+  <dialog id="ask" aria-labelledby="ask-h" aria-describedby="ask-p">
+    <form method="dialog" class="sheet ask">
+      <h2 id="ask-h">Are you sure?</h2>
+      <p id="ask-p" class="sub"></p>
+      <div class="actions"><button type="submit" class="chip" value="no" id="ask-no">Cancel</button><button type="submit" class="chip primary" value="yes" id="ask-yes">OK</button></div>
+    </form>
+  </dialog>
   <footer id="foot"></footer>
   <script type="application/json" id="data"></script>
   <script>"use strict";
@@ -521,6 +588,10 @@ footer p { max-width: 64ch; }
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const standalone = () => matchMedia("(display-mode: standalone)").matches || /** @type {any} */ (navigator).standalone === true;
   const sleep = ms => new Promise(res => setTimeout(res, ms));
+  const UI = /** @type {any} */ (self).FitnessUI;   // common.js: the theme rule and the confirm sheet, shared with ride mode
+  /** A yes/no question in the app's own sheet (the browser's confirm() box is grey, small and off-theme). Cancel has
+   *  the focus, so a stray Enter never deletes anything. @returns {Promise<boolean>} */
+  const ask = (title, text, yes, opt = {}) => UI.ask(title, text, yes, opt);
   const when = iso => new Date(iso).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
   // ── offline ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -540,12 +611,12 @@ footer p { max-width: 64ch; }
     deferred = null; installBtn.hidden = true;
   });
 
-  // ── theme: dark unless light is chosen; the choice sticks and is shared with ride mode ──
-  const themeBtns = [...document.querySelectorAll("[data-theme-pick]")], deviceDark = matchMedia("(prefers-color-scheme: dark)");
-  const effective = () => document.documentElement.dataset.theme || "dark";
-  const paintTheme = () => themeBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themePick === effective())));
-  for (const b of themeBtns) b.addEventListener("click", () => { document.documentElement.dataset.theme = b.dataset.themePick; ls.set("fitness-theme", b.dataset.themePick); paintTheme(); });
-  deviceDark.addEventListener("change", paintTheme);
+  // ── theme: dark unless light or auto (the phone's own setting) is chosen; the choice sticks and is shared with ride
+  //    mode. The page always carries the light or dark it shows (<html data-theme>); "auto" is only the preference.
+  const themeBtns = [...document.querySelectorAll("[data-theme-pick]")];
+  const paintTheme = () => themeBtns.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themePick === UI.pref())));
+  for (const b of themeBtns) b.addEventListener("click", () => { ls.set("fitness-theme", b.dataset.themePick); UI.apply(); paintTheme(); });
+  UI.deviceDark.addEventListener("change", () => { UI.apply(); paintTheme(); });
   paintTheme();
 
   // ── data ────────────────────────────────────────────────────────────────────────────────────────────────
@@ -558,13 +629,19 @@ footer p { max-width: 64ch; }
     if (!ls.set("fitness-dashboard", JSON.stringify(d))) throw new Error("This browser won't store data (private mode?)");
     if (d.ride) ls.set("fitness-ride-config", JSON.stringify(d.ride));
   }
+  // Data from outside this page (a phone link, a pasted or imported file, the sync repository, this device's saved copy
+  // of those) never carries markup: every < and > in it becomes its full-width twin, which reads the same and is never a
+  // tag. The reviver catches one written as a \u003c escape. The build's own inlined data goes the same way: its one
+  // picture, the QR code, is a data URI (fitness/build.py ride_qr), not markup.
+  const noTags = s => String(s).replace(/</g, "\uFF1C").replace(/>/g, "\uFF1E");
+  const readData = t => JSON.parse(noTags(t), (k, v) => (typeof v === "string" ? noTags(v) : v));
   /** Text from a pasted link, a pasted blob, or a data file → dashboard data. */
   async function parse(text) {
     const t = String(text || "").trim();
-    if (t.startsWith("{")) return JSON.parse(t);
+    if (t.startsWith("{")) return readData(t);
     const m = t.match(/[#&?]d=([A-Za-z0-9_-]+)/) || t.match(/^([A-Za-z0-9_-]{200,})$/);
     if (!m) throw new Error("That isn't a phone link or a data file from the dashboard");
-    return JSON.parse(await inflate(m[1]));
+    return readData(await inflate(m[1]));
   }
 
   // ── GitHub sync: your private repository's `state` branch, and its "Training sync" workflow ─────────────────
@@ -593,7 +670,7 @@ footer p { max-width: 64ch; }
     if (!res.ok) throw new Error(ghWhy(res.status, what));
     return res.status === 204 ? null : accept === RAW ? res.text() : res.json();
   }
-  const stateFile = async (c, name) => { const t = await gh(c, `/contents/${name}?ref=state`, { accept: RAW, allow404: true }); return t ? JSON.parse(t) : null; };
+  const stateFile = async (c, name) => { const t = await gh(c, `/contents/${name}?ref=state`, { accept: RAW, allow404: true }); return t ? readData(t) : null; };
   /** The sync's latest status and data. */
   async function pull(c) {
     const [st, d] = await Promise.all([stateFile(c, "status.json"), stateFile(c, "fitness-data.json")]);
@@ -619,7 +696,7 @@ footer p { max-width: 64ch; }
   async function load() {
     await moveIn();
     const raw = ($("data") || { textContent: "" }).textContent.trim();
-    if (raw.startsWith("{")) return { D: JSON.parse(raw), source: "build" };
+    if (raw.startsWith("{")) return { D: readData(raw), source: "build" };
     const frag = new URLSearchParams(location.hash.slice(1)).get("d");
     if (frag) {
       history.replaceState(null, "", location.pathname + location.search);
@@ -629,7 +706,7 @@ footer p { max-width: 64ch; }
       } catch (e) { cloudProblem = `That link couldn't be read: ${e.message}`; }
     }
     let saved = null;
-    try { saved = JSON.parse(ls.get("fitness-dashboard") || "null"); } catch { /* none */ }
+    try { saved = readData(ls.get("fitness-dashboard") || "null"); } catch { /* none */ }
     const c = cloud();
     if (c) {
       try {
@@ -798,12 +875,16 @@ footer p { max-width: 64ch; }
     if (act === "send-code") sendCode();
     if (act === "service") {
       const label = /** @type {HTMLElement} */ (t).dataset.label || "that";
-      if (confirm(`Mark “${label}” done today?`)) job("service", `Logging: ${label.toLowerCase()}`, { code: /** @type {HTMLElement} */ (t).dataset.code || "" });
+      const code = /** @type {HTMLElement} */ (t).dataset.code || "";
+      ask(`Mark “${label}” done?`, "Logged to your sync as done today: its count starts again from now.", "Mark done")
+        .then(ok => { if (ok) job("service", `Logging: ${label.toLowerCase()}`, { code }); });
     }
     if (act === "reload") location.reload();
     if (act === "forget") {
       e.preventDefault();
-      if (confirm("Remove the dashboard data from this device?")) { for (const k of ["fitness-dashboard", "fitness-ride-config", "fitness-checkin", "fitness-rpe", "fitness-feel-sent", "fitness-feel-pending"]) ls.set(k, null); location.reload(); }
+      if (dlg) dlg.close();
+      ask("Remove from this device?", "The dashboard data, check-ins and ride ratings on this phone are deleted. Anything already sent to your sync stays there.", "Remove", { danger: true })
+        .then(ok => { if (ok) { for (const k of ["fitness-dashboard", "fitness-ride-config", "fitness-checkin", "fitness-rpe", "fitness-feel-sent", "fitness-feel-pending"]) ls.set(k, null); location.reload(); } else if (dlg) dlg.showModal(); });   // back as it was left, typing and all
     }
   });
   // the morning check-in and ride ratings (app.js): a quiet "service" run takes them to the sync, so the next build's
@@ -971,9 +1052,22 @@ window.startDashboard = D => {
   const hrs = h => h == null ? "—" : `${Math.floor(h)}h${String(Math.round((h % 1) * 60)).padStart(2, "0")}`;
   const dist = m => { const v = units === "mi" ? m / 1609.344 : m / 1000; return `${v >= 100 ? Math.round(v).toLocaleString() : v.toFixed(1)} ${units}`; };
   const deg = c => units === "mi" ? `${Math.round(c * 9 / 5 + 32)}°` : `${Math.round(c)}°`;
-  // WMO weather codes as a plain glyph (text presentation, so it takes the ink colour like the rest of the page)
-  const sky = c => (c >= 95 ? "\u26A1" : c >= 71 && c <= 86 && !(c >= 80 && c <= 82) ? "\u2744" : c >= 51 ? "\u2602" : c >= 45 ? "\u2248" : c >= 3 ? "\u2601" : c >= 1 ? "\u26C5" : "\u2600") + "\uFE0E";
+  // WMO weather codes as a pictogram in the 1974 AIGA/DOT manner: solid geometric marks in the ink colour, drawn here
+  // (a glyph like ☂ or ⛅ looks different on every phone, and some draw it as a colour emoji)
   const SKY = c => c >= 95 ? "thunderstorms" : c >= 71 && c <= 86 && !(c >= 80 && c <= 82) ? "snow" : c >= 51 ? "rain" : c >= 45 ? "fog" : c >= 3 ? "overcast" : c >= 1 ? "partly cloudy" : "clear";
+  const CLOUD = (dy = 0) => `<circle cx="8" cy="${14.5 + dy}" r="4.5"/><circle cx="13.5" cy="${11 + dy}" r="5.5"/><circle cx="18" cy="${15 + dy}" r="4"/><rect x="8" y="${13 + dy}" width="10" height="6"/>`;
+  const RAYS = (cx, cy, r0, r1, from = 0, to = 360) => { let d = ""; for (let a = from; a < to; a += 45) { const t = a * Math.PI / 180, c = Math.cos(t), s = Math.sin(t); d += `M${(cx + c * r0).toFixed(2)} ${(cy + s * r0).toFixed(2)}L${(cx + c * r1).toFixed(2)} ${(cy + s * r1).toFixed(2)}`; } return `<path d="${d}" stroke="currentColor" stroke-width="2" fill="none"/>`; };
+  const PICTO = {
+    clear: `<circle cx="12" cy="12" r="4.5"/>${RAYS(12, 12, 7, 10.5)}`,
+    "partly cloudy": `<circle cx="8" cy="8" r="3.2"/>${RAYS(8, 8, 5, 7.5, 135, 360)}${CLOUD(2)}`,
+    overcast: CLOUD(),
+    fog: `<rect x="3" y="6" width="18" height="2.5"/><rect x="5" y="10.75" width="16" height="2.5"/><rect x="3" y="15.5" width="15" height="2.5"/>`,
+    rain: `${CLOUD(-3)}<path d="M8.5 18.5l-1.5 3.5M12.5 18.5l-1.5 3.5M16.5 18.5l-1.5 3.5" stroke="currentColor" stroke-width="2" fill="none"/>`,
+    snow: `${CLOUD(-3)}<rect x="6.5" y="18.5" width="2.5" height="2.5"/><rect x="11" y="20.5" width="2.5" height="2.5"/><rect x="15.5" y="18.5" width="2.5" height="2.5"/>`,
+    thunderstorms: `${CLOUD(-4)}<path d="M13.5 13L8.5 19h3.5l-1.5 5 6-7h-3.5l1.5-4z"/>`,
+  };
+  /** The day's sky as a pictogram; the word goes to screen readers. */
+  const sky = c => `<svg class="picto" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${PICTO[SKY(c)]}</svg><span class="sr">${SKY(c)}</span>`;
   const elev = m => units === "mi" ? `${Math.round(m * 3.28084).toLocaleString()} ft` : `${Math.round(m).toLocaleString()} m`;
   const speed = kph => kph == null ? "—" : units === "mi" ? `${(kph / 1.609344).toFixed(1)} mph` : `${kph.toFixed(1)} km/h`;
   const signed = v => v == null ? "—" : (Math.round(v) > 0 ? "+" : Math.round(v) < 0 ? "−" : "") + Math.abs(Math.round(v));
@@ -1006,6 +1100,8 @@ window.startDashboard = D => {
   const swatch = s => `<i class="sw ${s.type === "bar" ? "" : s.wash ? "wash" : "line"}" style="background:${s.color}"></i>`;
 
   function chart(host, cfg) {
+    if (!host || host.dataset.drawn) return;   // drawn once per build of its panel; a panel not rebuilt keeps its chart
+    host.dataset.drawn = "1";
     host.classList.add("chart");
     host.tabIndex = 0;
     host.setAttribute("role", "img");
@@ -1205,8 +1301,9 @@ window.startDashboard = D => {
   const checkins = () => { const mine = stored(CHECK_KEY), all = { ...(D.checkins || {}) }; for (const [d, c] of Object.entries(mine)) all[d] = { ...(all[d] || {}), ...c }; return all; };
   const live = () => D.today === isoToday();                         // a check-in belongs to the morning it was made on
   const checkin = () => live() ? checkins()[D.today] || null : null;
-  const saveCheckin = (k, v) => {
-    const all = stored(CHECK_KEY), day = { ...(all[D.today] || {}), [k]: v };
+  const saveCheckin = (k, v) => saveAnswers({ [k]: v });
+  const saveAnswers = got => {
+    const all = stored(CHECK_KEY), day = { ...(all[D.today] || {}), ...got };
     all[D.today] = day;
     const keep = Object.keys(all).sort().slice(-90);                  // three months is plenty for the chart
     ls.set(CHECK_KEY, JSON.stringify(Object.fromEntries(keep.map(d => [d, all[d]]))));
@@ -1294,6 +1391,7 @@ window.startDashboard = D => {
     const B = blended();
     const said = done ? FEEL.map(([k, name, words]) => `${name.toLowerCase()} ${words[c[k] - 1].toLowerCase()}`).concat(c.sick !== "none" ? [SICK.find(s => s[0] === c.sick)[1].toLowerCase()] : []) : [];
     return `<details class="checkin"${done && !feelOpen ? "" : " open"}><summary><span class="label">How do you feel?</span>${done ? ` <span class="said">${esc(listOf(said))}${B && B.feel != null ? ` · feel ${B.feel}` : ""}</span>` : ""}</summary>
+      ${done ? "" : `<p class="feel-quick"><button type="button" class="chip primary" data-feel-all="1">All normal · not sick</button> <span class="sub">or tap each below</span></p>`}
       <div class="feel-in">${FEEL.map(([k, name, words]) => group(k, name, words.map((w, i) => [i + 1, w]))).join("")}${group("sick", "Feeling sick?", SICK)}</div>
       <p class="sub">Kept on this phone. It eases the call when your body says so, never makes it harder.</p></details>`;
   }
@@ -1302,20 +1400,31 @@ window.startDashboard = D => {
     if (!r) return;
     rateRide(/** @type {HTMLElement} */ (r).dataset.rpe, Number(/** @type {HTMLElement} */ (r).dataset.v));
     const y = window.scrollY;
-    render();
+    render("today");
     window.scrollTo(0, y);
   });
   app.addEventListener("click", e => {
     const t = e.target instanceof Element ? e.target : null;
     const sum = t && t.closest(".checkin > summary");
     if (sum) { feelOpen = !(/** @type {HTMLDetailsElement} */ (sum.parentElement).open); return; }
+    if (t && t.closest("[data-feel-all]")) {                         // the usual morning: everything normal, not sick
+      feelOpen = false;
+      const now = checkin() || {};   // only what's not answered yet: a "very sore" already tapped stays very sore
+      saveAnswers({ ...Object.fromEntries(FEEL.map(([k]) => [k, 3])), sick: "none", ...Object.fromEntries(Object.entries(now).filter(([, v]) => v != null && v !== "")) });
+      const y = window.scrollY;
+      render("today");
+      window.scrollTo(0, y);
+      const sum2 = document.querySelector(".checkin > summary");
+      if (sum2 instanceof HTMLElement) sum2.focus();
+      return;
+    }
     const b = t && t.closest("[data-feel]");
     if (!b) return;
     const k = /** @type {HTMLElement} */ (b).dataset.feel, raw = /** @type {HTMLElement} */ (b).dataset.v;
     feelOpen = answered(checkin());                                   // the answer that finishes it folds it away
     saveCheckin(k, k === "sick" ? raw : Number(raw));
     const y = window.scrollY;
-    render();
+    render("today");
     window.scrollTo(0, y);
     const again = document.querySelector(`[data-feel="${k}"][data-v="${raw}"]`);
     if (again instanceof HTMLElement && again.closest("details[open]")) again.focus();
@@ -1411,10 +1520,12 @@ window.startDashboard = D => {
     const c = D.commute && D.commute.today;
     if (!c) return "";
     const headline = pToday0() && pToday0().commute;   // on a planned commute day the call above already is the commute
-    const mark = { ride: "▲", easy: "■", optional: "□", wet: "☂\uFE0E", skip: "▼" }[c.verdict] || "■";
+    const fuel = c.fuel && !D.fuel;
+    if (headline && !fuel) return "";                  // nothing left to say under the label: no orphaned heading
+    const mark = { ride: "▲", easy: "■", optional: "□", wet: `<svg class="picto" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${PICTO.rain}</svg>`, skip: "▼" }[c.verdict] || "■";
     return `<div class="commute-call ${esc(c.verdict)}"><span class="label">Bike commute</span>
       ${headline ? "" : `<p><b>${mark} ${esc(c.title)}.</b> ${esc(c.detail)}</p>`}
-      ${c.fuel && !D.fuel ? `<p class="sub">${esc(c.fuel)}</p>` : ""}</div>`;
+      ${fuel ? `<p class="sub">${esc(c.fuel)}</p>` : ""}</div>`;
   }
 
   // the fallback for weather or a short day; a rest day's "feeling great?" only when the morning says so
@@ -1470,7 +1581,11 @@ window.startDashboard = D => {
     const hash = location.hash.slice(1);
     show(HOME[hash] || (TABS.some(t => t[0] === ss.get("fitness-tab")) ? ss.get("fitness-tab") : "today"), HOME[hash] && hash !== HOME[hash] ? hash : "");
   }
+  /** @type {Record<string, string>} */
+  const pending = {};   // panels rebuilt off screen by a Today-only render, put in place when their tab is shown
   function show(id, anchor = "") {
+    const fresh = pending[id] != null && document.getElementById(`panel-${id}`);
+    if (fresh) { fresh.innerHTML = pending[id]; delete pending[id]; charts(); }
     for (const [t] of TABS) {
       const on = t === id, b = document.getElementById(`tab-${t}`), pnl = document.getElementById(`panel-${t}`);
       if (b) { b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; }
@@ -1538,7 +1653,7 @@ window.startDashboard = D => {
     const week = plan.days.slice(0, 7);
     const hours = week.reduce((a, d) => a + (d.minutes || 0), 0) / 60, commutes = week.filter(d => d.commute).length, lifts = week.filter(d => d.strength).length;
     return `<div class="week-ahead"><span class="label">The next 7 days · ${hours.toFixed(1)} h${commutes ? ` · ${commutes} commute${commutes === 1 ? "" : "s"}` : ""}${lifts ? ` · ${lifts} strength` : ""}</span>
-      <ol>${week.map((d, i) => `<li class="${esc(d.level)}${i === 0 ? " today" : ""}"><details><summary><span class="dow">${i === 0 ? "Today" : DOW[asDate(d.date).getDay()]}</span><i aria-hidden="true"></i>
+      <ol>${week.map((d, i) => `<li class="${esc(d.level)}${i === 0 ? " today" : ""}"><details><summary><span class="dow">${i === 0 ? "Today" : DOW[asDate(d.date).getDay()]}</span><i aria-hidden="true"></i><span class="sr">${esc(LEVEL[d.level] || d.level)}: </span>
         <span class="what"><b>${esc(d.title)}</b>${d.minutes ? ` · ${dur(d.minutes * 60)}` : ""}${d.strength ? " · + strength" : ""}</span>${wxChip(d.wx)}</summary>
         <p class="sub">${esc(d.session)}</p>${d.strength ? `<p class="sub"><b>+ ${esc(d.strength.title)} · ${d.strength.minutes} min:</b> ${esc(d.strength.detail)}</p>` : ""}${d.alt ? `<p class="sub"><b>Plan B:</b> ${esc(d.alt)}</p>` : ""}${d.indoor && d.steps && d.steps.length ? `<p><button type="button" class="chip" data-zwo="${esc(d.date)}">Zwift / MyWoosh file (.zwo)</button></p>` : ""}</details></li>`).join("")}</ol>
       <p class="sub">Rebuilt at every sync from what you actually rode, slept and recovered: a missed day moves, a good week grows.</p></div>`;
@@ -1756,7 +1871,9 @@ window.startDashboard = D => {
     </section>`;
   }
 
-  function render() {
+  /** Builds the page. A tap on Today (the check-in, a ride rating) rebuilds only Today and leaves the other tabs to be
+   *  rebuilt when they're opened: no chart is redrawn for a tap. @param {"all" | "today"} [scope] */
+  function render(scope = "all") {
     const rd = now.readiness, sl = now.sleep, pToday = plan && plan.days[0], rec = feelCall(todayCall(pToday), pToday), next = plan && plan.races[0];
     const last7 = D.readiness.slice(-8, -1).map(r => r.score);
     const rAvg = mean(last7);
@@ -1804,7 +1921,7 @@ window.startDashboard = D => {
           <div class="phone-in">
             ${D.phone_href ? `<p>The whole dashboard, in the app on your phone: <button type="button" class="chip" data-copy="phone">Copy phone link</button> <button type="button" class="chip" data-save="1">Save data file</button></p>
             <p class="sub">Send the link to yourself (AirDrop, Messages, email) and paste it under <b>Import data</b> in the app, or put the file in iCloud Drive / Google Drive and pick it there. It carries this build's numbers after the <b>#</b>, which never reaches the server; the app keeps them on the phone, offline.</p>` : ""}
-            ${D.ride_qr ? `<div class="qr"><div class="qrimg" role="img" aria-label="QR code that opens ride mode with this week's sessions">${D.ride_qr}</div>
+            ${D.ride_qr ? `<div class="qr"><div class="qrimg"><img src="${esc(D.ride_qr)}" alt="QR code that opens ride mode with this week's sessions"></div>
             <p class="sub"><b>Just ride mode:</b> scan this with the phone on your bars, or <button type="button" class="chip" data-copy="ride">copy the ride link</button>. It opens ride mode with your HR zones and the next 7 days of sessions.</p></div>` : ""}
           </div></details>` : ""}</section>` : "";
 
@@ -1886,6 +2003,12 @@ window.startDashboard = D => {
       ride: `<section id="ride-mode" class="card ride-cta"><div class="head"><h2>Ride</h2></div><p><a class="chip big-chip primary" href="${esc(D.ride_href || "ride.html")}">Open ride mode</a> <span class="sub">Live heart rate, today's session as timed steps, the weather on your line.</span></p></section>`
         + training + bikeHTML(),
     };
+    if (scope === "today" && document.getElementById("panel-today")) {
+      document.getElementById("panel-today").innerHTML = panels.today;
+      for (const [id, inner] of Object.entries(panels)) if (id !== "today") pending[id] = inner;
+      return;
+    }
+    for (const id of Object.keys(pending)) delete pending[id];
     app.innerHTML = Object.entries(panels).map(([id, inner]) => `<div class="panel" id="panel-${id}" role="tabpanel" aria-labelledby="tab-${id}" tabindex="-1">${inner}</div>`).join("");
     tabs();
     document.getElementById("foot").innerHTML = `<p><b>How the numbers work.</b> TSS from power (when an FTP is set), else heart-rate TSS (Banister TRIMP, 1 h at threshold HR = 100), else a duration estimate. Fitness/fatigue are 42/7-day exponentially weighted load; form is yesterday's fitness minus fatigue. Readiness compares last night's resting HR, overnight stress (the Venu Sq's HRV-derived signal), Body Battery and breathing rate with your own 60-day normal, blends in the sleep score, and takes points off for deep fatigue or a load spike.</p>
