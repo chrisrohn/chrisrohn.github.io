@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-OiLRWesQWiCuv+t2MEAjJvTTieEoZ1tCThRJLK5Yntc=' 'sha256-mpkR7NxpyXLUi7F1jCi60k7cHrJVIfD0a5Q6GzFzoHg=' 'sha256-lHp05xv0Q7hg0UIqkTd8EyVTJE+OWZZhcrc4VKI+x5w='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-OiLRWesQWiCuv+t2MEAjJvTTieEoZ1tCThRJLK5Yntc=' 'sha256-cb/ZHFeCfXvGIz8FBBv7W2BueMLK3+ACnDQodkYBUdo=' 'sha256-lHp05xv0Q7hg0UIqkTd8EyVTJE+OWZZhcrc4VKI+x5w='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tiles.openfreemap.org; font-src 'self'; connect-src 'self' https://api.github.com https://api.open-meteo.com https://tiles.openfreemap.org https://brouter.de; manifest-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <meta name="color-scheme" content="light dark">
   <title>Training &amp; Recovery</title>
@@ -601,7 +601,7 @@ footer p { max-width: 64ch; }
     return valid(d) ? adopt(d) : null;
   }
   const timeout = (p, ms) => Promise.race([p, sleep(ms).then(() => { throw new Error("GitHub is slow to answer: showing this device's copy"); })]);
-  const problems = st => !st ? [] : [st.garmin && st.garmin.error && `Garmin: ${st.garmin.error}`, st.strava && st.strava.error && `Strava: ${st.strava.error}`, st.feel && st.feel.error && `Check-in: ${st.feel.error}`, st.error && `Build: ${st.error}`].filter(Boolean);
+  const problems = st => !st ? [] : [st.garmin && st.garmin.error && `Garmin: ${st.garmin.error}`, st.strava && st.strava.error && `Strava: ${st.strava.error}`, st.feel && st.feel.error && `Check-in: ${st.feel.error}`, st.ride && st.ride.error && `Ride: ${st.ride.error}`, st.error && `Build: ${st.error}`].filter(Boolean);
 
   /** The move from chrisrohn.com/fitness/ (fitness/build-app.mjs): what this phone kept there arrives as #move=, deflated.
    *  Only the app's own keys, and never over something this address already has. */
