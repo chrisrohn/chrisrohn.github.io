@@ -97,7 +97,7 @@ self.FitnessUI = (() => {
     --page: #141414; --surface: #141414; --raised: #1c1c1b; --band: #000000; --on-band: #f2efe8; --sheet-shadow: #000000;
     --ink: #f2efe8; --ink-2: #c4c0b7; --muted: #9a968e;
     --grid: #2e2d2b; --axis: #f2efe8; --ring: #f2efe8; --hair: #3a3936;
-    --accent: #e8442f; --accent-ink: #e8442f;
+    --accent: #e8442f; --accent-ink: #ee5440;   /* one step lighter for small type: AA 4.5:1 on --raised too */
     --s1: #e8442f; --s2: #5b8fe0; --s3: #c08a10; --s4: #9a6bd0;
     --z1: #4f4d4a; --z2: #75726d; --z3: #9b9891; --z4: #c4c0b7; --z5: #f2efe8;
     --good-ink: #0ca30c; --load: #3a3936; --wash: .18; --key: transparent;
@@ -108,7 +108,7 @@ self.FitnessUI = (() => {
   --page: #141414; --surface: #141414; --raised: #1c1c1b; --band: #000000; --on-band: #f2efe8; --sheet-shadow: #000000;
   --ink: #f2efe8; --ink-2: #c4c0b7; --muted: #9a968e;
   --grid: #2e2d2b; --axis: #f2efe8; --ring: #f2efe8; --hair: #3a3936;
-  --accent: #e8442f; --accent-ink: #e8442f;
+  --accent: #e8442f; --accent-ink: #ee5440;
   --s1: #e8442f; --s2: #5b8fe0; --s3: #c08a10; --s4: #9a6bd0;
   --z1: #4f4d4a; --z2: #75726d; --z3: #9b9891; --z4: #c4c0b7; --z5: #f2efe8;
   --good-ink: #0ca30c; --load: #3a3936; --wash: .18; --key: transparent;
@@ -553,7 +553,7 @@ footer p { max-width: 64ch; }
       </section>
       <h3 class="mt-3">Or import by hand</h3>
       <label for="import-text" class="label">Phone link</label>
-      <textarea id="import-text" rows="3" spellcheck="false" autocomplete="off" placeholder="https://chris.bike/#d=…"></textarea>
+      <textarea id="import-text" rows="3" spellcheck="false" autocomplete="off" placeholder="https://chrisrohn.github.io/#d=…"></textarea>
       <div class="actions"><button type="button" class="chip" id="import-paste">Paste</button><button type="submit" class="chip primary" id="import-go">Import</button></div>
       <label for="import-file" class="label mt-3">Or a data file</label>
       <input id="import-file" type="file" accept=".json,application/json,text/plain">

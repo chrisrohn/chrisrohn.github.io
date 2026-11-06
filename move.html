@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-d6+OkeoxZR/vOU4vnQisDh+CoXXEA3UJFRqtr5n5+DM='; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GP0x3INichXzfAvMKSpmdzK3vs7b70lKT1uoLgm8v5c='; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#000000">
@@ -26,7 +26,7 @@
 // It only ever sends the phone back to an address in FROM ([app] moved_from in fitness/config.toml, filled in by
 // fitness/build-app.mjs), and it only lands on this app's own pages.
 (async () => {
-  const FROM = ["https://chrisrohn.github.io/","https://chrisrohn.com/fitness/","https://www.chrisrohn.com/fitness/"];
+  const FROM = ["https://chrisrohn.com/fitness/","https://www.chrisrohn.com/fitness/"];
   /** ride mode's database as ride.js creates it (version 1): store → keyPath, or null for out-of-line keys */
   const STORES = /** @type {Record<string, string | null>} */ ({ routes: "id", rides: "id", tracks: "id", chunks: null });
   const app = new URL("./", location.href).href;
